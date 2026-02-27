@@ -218,7 +218,7 @@ export default function AlumniDetailsPage() {
                         <p>
                           <span className="font-semibold">Website / Portfolio: </span>
                           <a
-                            href={alumni.website}
+                            href={alumni.website.startsWith('http') ? alumni.website : `https://${alumni.website}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-primary hover:underline"
@@ -309,7 +309,7 @@ export default function AlumniDetailsPage() {
                         <p>
                           <span className="font-semibold">LinkedIn: </span>
                           <a
-                            href={alumni.linkedin}
+                            href={alumni.linkedin.startsWith('http') ? alumni.linkedin : `https://${alumni.linkedin}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-primary hover:underline"
@@ -322,7 +322,7 @@ export default function AlumniDetailsPage() {
                         <p>
                           <span className="font-semibold">Facebook: </span>
                           <a
-                            href={alumni.facebook}
+                            href={alumni.facebook.startsWith('http') ? alumni.facebook : `https://${alumni.facebook}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-primary hover:underline"
@@ -335,7 +335,7 @@ export default function AlumniDetailsPage() {
                         <p>
                           <span className="font-semibold">Instagram: </span>
                           <a
-                            href={alumni.instagram}
+                            href={alumni.instagram.startsWith('http') ? alumni.instagram : `https://${alumni.instagram}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-primary hover:underline"

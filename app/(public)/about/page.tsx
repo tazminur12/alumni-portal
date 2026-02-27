@@ -22,11 +22,10 @@ const values = [
 ];
 
 const milestones = [
-  { year: "1975", event: "Amtoli Model High School established" },
-  { year: "1990", event: "First batch of SSC examinees" },
-  { year: "2005", event: "School celebrated 30th anniversary" },
-  { year: "2015", event: "Alumni Association officially formed" },
-  { year: "2024", event: "Alumni Portal launched online" },
+  { year: "2003", event: "Amtoli Model High School established" },
+  { year: "2005", event: "First batch of SSC examinees" },
+  { year: "2026", event: "Alumni Portal launched online" },
+
 ];
 
 export default function AboutPage() {
@@ -81,8 +80,8 @@ export default function AboutPage() {
           </h2>
 
           <div className="relative border-l-2 border-primary/20 pl-8">
-            {milestones.map((m) => (
-              <div key={m.year} className="relative mb-10 last:mb-0">
+            {milestones.map((m, index) => (
+              <div key={`${m.year}-${index}`} className="relative mb-10 last:mb-0">
                 <div className="absolute -left-10.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-primary bg-white">
                   <div className="h-2 w-2 rounded-full bg-primary" />
                 </div>

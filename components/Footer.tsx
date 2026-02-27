@@ -93,10 +93,21 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/10 pt-6 text-center">
-          <p className="text-xs text-white/50">
+        <div className="mt-10 border-t border-white/10 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-sm text-white/60">
             &copy; {new Date().getFullYear()} Amtoli Model High School Alumni
             Association. All rights reserved.
+          </p>
+          <p className="text-sm text-white/60">
+            Developed with <span className="text-red-500">❤</span> by{" "}
+            <a
+              href="https://tazminur.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-white transition-colors hover:text-accent-light hover:underline"
+            >
+              Tazminur Rahman Tanim
+            </a>
           </p>
         </div>
       </div>
