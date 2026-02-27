@@ -1,0 +1,44 @@
+"use client";
+
+import { useState } from "react";
+
+export default function FundUsageUpdatePostPage() {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Fund Usage Update Post</h2>
+        <p className="mt-1 text-sm text-muted">
+          Share how collected donations are being used with regular updates.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="text-lg font-semibold text-foreground">Create Update</h3>
+        <form className="mt-4 grid gap-3">
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Update title"
+            className="rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <textarea
+            rows={8}
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            placeholder="Write fund usage update details..."
+            className="resize-none rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            className="w-fit rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
+          >
+            Publish (UI Ready)
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

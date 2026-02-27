@@ -1,3 +1,9 @@
+import { getCurrentUser } from "@/lib/current-user";
+import { connectDb } from "@/lib/db";
+import User from "@/models/User";
+import Event from "@/models/Event";
+import Post from "@/models/Post";
+import Donation from "@/models/Donation";
 import {
   Users,
   Calendar,
@@ -8,39 +14,57 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 
-const statsCards = [
-  { label: "Total Alumni", value: "2,543", change: "+12%", up: true, icon: Users, color: "bg-primary/10 text-primary" },
-  { label: "Total Events", value: "124", change: "+5%", up: true, icon: Calendar, color: "bg-blue-500/10 text-blue-600" },
-  { label: "Total Donations", value: "৳12,45,000", change: "+18%", up: true, icon: Heart, color: "bg-pink-500/10 text-pink-600" },
-  { label: "Total Posts", value: "867", change: "-3%", up: false, icon: FileText, color: "bg-purple-500/10 text-purple-600" },
-];
-
-const recentUsers = [
-  { name: "Taslima Sultana", batch: "2018", email: "taslima@mail.com", status: "Active" },
-  { name: "Rashed Khan", batch: "2020", email: "rashed@mail.com", status: "Pending" },
-  { name: "Ayesha Siddika", batch: "2016", email: "ayesha@mail.com", status: "Active" },
-  { name: "Jahangir Alam", batch: "2014", email: "jahangir@mail.com", status: "Active" },
-  { name: "Sumaiya Islam", batch: "2019", email: "sumaiya@mail.com", status: "Pending" },
-];
-
 const statusColors: Record<string, string> = {
-  Active: "bg-green-50 text-green-600",
-  Pending: "bg-amber-50 text-amber-600",
+  active: "bg-green-50 text-green-600",
+  pending: "bg-amber-50 text-amber-600",
+  suspended: "bg-red-50 text-red-600",
 };
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const currentUser = await getCurrentUser();
+  const isModerator = currentUser?.role === "moderator";
+
+  await connectDb();
+
+  const [totalUsers, totalEvents, totalPosts, donations] = await Promise.all([
+    User.countDocuments(),
+    Event.countDocuments(),
+    Post.countDocuments(),
+    Donation.find({ status: "completed" }),
+  ]);
+
+  const totalDonationsAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+  const recentUsersData = await User.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select("fullName batch email status");
+
+  const statsCards = [
+    { label: "Total Alumni", value: totalUsers.toString(), change: "+12%", up: true, icon: Users, color: "bg-primary/10 text-primary" },
+    { label: "Total Events", value: totalEvents.toString(), change: "+5%", up: true, icon: Calendar, color: "bg-blue-500/10 text-blue-600" },
+    { label: "Total Donations", value: `৳${totalDonationsAmount.toLocaleString()}`, change: "+18%", up: true, icon: Heart, color: "bg-pink-500/10 text-pink-600" },
+    { label: "Total Posts", value: totalPosts.toString(), change: "-3%", up: false, icon: FileText, color: "bg-purple-500/10 text-purple-600" },
+  ];
+
+  const filteredStats = isModerator 
+    ? statsCards.filter(stat => stat.label !== "Total Donations")
+    : statsCards;
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
+        <h2 className="text-2xl font-bold text-foreground">
+          {isModerator ? "Moderator Dashboard" : "Admin Dashboard"}
+        </h2>
         <p className="text-sm text-muted">
           Overview of your alumni portal
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map((stat) => (
+      <div className={`grid gap-4 sm:grid-cols-2 ${isModerator ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
+        {filteredStats.map((stat) => (
           <div
             key={stat.label}
             className="rounded-2xl border border-border bg-card p-5 shadow-sm"
@@ -98,11 +122,11 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {recentUsers.map((user) => (
+                {recentUsersData.map((user) => (
                   <tr key={user.email} className="hover:bg-gray-50/50">
                     <td className="px-5 py-3">
                       <p className="text-sm font-medium text-foreground">
-                        {user.name}
+                        {user.fullName}
                       </p>
                       <p className="text-xs text-muted">{user.email}</p>
                     </td>
@@ -111,7 +135,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-5 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColors[user.status] ?? ""}`}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusColors[user.status as string] ?? ""}`}
                       >
                         {user.status}
                       </span>
@@ -135,7 +159,14 @@ export default function AdminDashboard() {
                 { label: "Manage Users", href: "/admin/users" },
                 { label: "View Donations", href: "/admin/donations" },
                 { label: "View Analytics", href: "/admin/analytics" },
-              ].map((action) => (
+              ]
+                .filter((action) => {
+                  if (isModerator) {
+                    return action.label !== "View Donations" && action.label !== "View Analytics";
+                  }
+                  return true;
+                })
+                .map((action) => (
                 <a
                   key={action.label}
                   href={action.href}

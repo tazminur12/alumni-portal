@@ -1,3 +1,8 @@
+import { connectDb } from "@/lib/db";
+import User from "@/models/User";
+import Event from "@/models/Event";
+import Post from "@/models/Post";
+import Donation from "@/models/Donation";
 import {
   Users,
   Calendar,
@@ -7,33 +12,104 @@ import {
   BarChart3,
 } from "lucide-react";
 
-const overviewStats = [
-  { label: "Total Alumni", value: "2,543", icon: Users, color: "bg-primary/10 text-primary", trend: "+12% from last year" },
-  { label: "Active Events", value: "8", icon: Calendar, color: "bg-blue-500/10 text-blue-600", trend: "+3 this month" },
-  { label: "Total Donations", value: "৳12,45,000", icon: Heart, color: "bg-pink-500/10 text-pink-600", trend: "+18% from last year" },
-  { label: "Published Posts", value: "867", icon: FileText, color: "bg-purple-500/10 text-purple-600", trend: "+45 this month" },
-];
+export default async function AdminAnalyticsPage() {
+  await connectDb();
 
-const batchDistribution = [
-  { batch: "2000-2005", count: 320 },
-  { batch: "2006-2010", count: 480 },
-  { batch: "2011-2015", count: 620 },
-  { batch: "2016-2020", count: 750 },
-  { batch: "2021-2025", count: 373 },
-];
+  const [totalUsers, activeEvents, donations, publishedPosts] = await Promise.all([
+    User.countDocuments(),
+    Event.countDocuments({ status: "upcoming" }),
+    Donation.find({ status: "received" }),
+    Post.countDocuments({ status: "Published" }),
+  ]);
 
-const monthlyActivity = [
-  { month: "Sep", registrations: 18, donations: 12 },
-  { month: "Oct", registrations: 25, donations: 15 },
-  { month: "Nov", registrations: 22, donations: 20 },
-  { month: "Dec", registrations: 30, donations: 25 },
-  { month: "Jan", registrations: 35, donations: 28 },
-  { month: "Feb", registrations: 28, donations: 22 },
-];
+  const totalDonationsAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
 
-const maxReg = Math.max(...monthlyActivity.map((m) => m.registrations));
+  const overviewStats = [
+    { label: "Total Alumni", value: totalUsers.toString(), icon: Users, color: "bg-primary/10 text-primary", trend: "Total registered" },
+    { label: "Active Events", value: activeEvents.toString(), icon: Calendar, color: "bg-blue-500/10 text-blue-600", trend: "Upcoming events" },
+    { label: "Total Donations", value: `৳${totalDonationsAmount.toLocaleString()}`, icon: Heart, color: "bg-pink-500/10 text-pink-600", trend: "Received donations" },
+    { label: "Published Posts", value: publishedPosts.toString(), icon: FileText, color: "bg-purple-500/10 text-purple-600", trend: "Live posts" },
+  ];
 
-export default function AdminAnalyticsPage() {
+  // Batch Distribution
+  const batchAggregation = await User.aggregate([
+    {
+      $group: {
+        _id: "$batch",
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  const batchDistribution = batchAggregation.map(b => ({
+    batch: b._id || "Unknown",
+    count: b.count
+  }));
+
+  const maxBatchCount = Math.max(...batchDistribution.map(b => b.count), 1);
+
+  // Monthly Activity (Registrations)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
+  const monthlyRegAggregation = await User.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: sixMonthsAgo }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } }
+  ]);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  // Fill missing months
+  const monthlyActivity = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    
+    const found = monthlyRegAggregation.find(m => m._id.year === year && m._id.month === month);
+    monthlyActivity.push({
+      month: monthNames[month - 1],
+      registrations: found ? found.count : 0,
+    });
+  }
+
+  const maxReg = Math.max(...monthlyActivity.map((m) => m.registrations), 1);
+
+  // Top Donors
+  const topDonorsAggregation = await Donation.aggregate([
+    { $match: { status: "received" } },
+    {
+      $group: {
+        _id: "$donorName",
+        totalAmount: { $sum: "$amount" }
+      }
+    },
+    { $sort: { totalAmount: -1 } },
+    { $limit: 4 }
+  ]);
+
+  const topDonors = topDonorsAggregation.map(d => ({
+    name: d._id || "Anonymous",
+    amount: `৳${d.totalAmount.toLocaleString()}`,
+  }));
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
@@ -78,7 +154,7 @@ export default function AdminAnalyticsPage() {
           </div>
           <div className="space-y-4">
             {batchDistribution.map((item) => {
-              const pct = Math.round((item.count / 750) * 100);
+              const pct = Math.round((item.count / maxBatchCount) * 100);
               return (
                 <div key={item.batch}>
                   <div className="mb-1 flex items-center justify-between text-sm">
@@ -136,12 +212,7 @@ export default function AdminAnalyticsPage() {
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h3 className="mb-4 font-semibold text-foreground">Top Donors</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { name: "Anonymous", amount: "৳15,000", batch: "-" },
-            { name: "Kamal Hossain", amount: "৳10,000", batch: "2010" },
-            { name: "Mizanur Rahman", amount: "৳7,500", batch: "2003" },
-            { name: "Rafiq Ahmed", amount: "৳5,000", batch: "2005" },
-          ].map((donor, i) => (
+          {topDonors.map((donor, i) => (
             <div
               key={donor.name}
               className="flex items-center gap-3 rounded-xl border border-border p-4"

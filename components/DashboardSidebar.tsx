@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   User,
   Users,
-  MessageSquare,
   Calendar,
   Briefcase,
   Image,
@@ -20,9 +19,7 @@ const sidebarLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/profile", label: "My Profile", icon: User },
   { href: "/dashboard/directory", label: "Alumni Directory", icon: Users },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/events", label: "Events", icon: Calendar },
-  { href: "/dashboard/jobs", label: "Jobs & Career", icon: Briefcase },
   { href: "/dashboard/memories", label: "Memories", icon: Image },
   { href: "/dashboard/donations", label: "Donations", icon: Heart },
 ];

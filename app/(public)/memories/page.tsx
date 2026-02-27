@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Image as ImageIcon,
   Heart,
@@ -6,7 +10,7 @@ import {
   Camera,
 } from "lucide-react";
 
-const memories = [
+const staticMemories = [
   {
     title: "Batch 2010 Farewell Party",
     description:
@@ -109,6 +113,42 @@ const memories = [
 ];
 
 export default function MemoriesPage() {
+  const [memories, setMemories] = useState(staticMemories);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/memories", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const list = (data.memories ?? []).map((m: { color?: string }) => ({
+            ...m,
+            color: m.color || "from-primary/5 to-primary/10",
+          }));
+          if (list.length > 0) setMemories(list);
+        }
+      } catch {
+        // keep static data
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, []);
+
+  const filteredMemories = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return memories;
+    return memories.filter(
+      (m: { title: string; author: string; batch?: string; description: string }) =>
+        m.title.toLowerCase().includes(q) ||
+        m.author.toLowerCase().includes(q) ||
+        (m.batch && m.batch.toLowerCase().includes(q)) ||
+        m.description.toLowerCase().includes(q)
+    );
+  }, [memories, searchTerm]);
   return (
     <>
       {/* Hero */}
@@ -140,6 +180,8 @@ export default function MemoriesPage() {
             />
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search memories by title, author, or batch..."
               className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
@@ -150,19 +192,37 @@ export default function MemoriesPage() {
       {/* Memories Grid */}
       <section className="py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {loading ? (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted">
+              Loading memories...
+            </div>
+          ) : filteredMemories.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted">
+              No memories found.
+            </div>
+          ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {memories.map((memory) => (
-              <div
-                key={memory.title}
-                className="group rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md"
+            {filteredMemories.map((memory: { id?: string; title: string; color?: string; batch?: string; date: string; description: string; author: string; likes: number; comments: number; imageUrl?: string }) => (
+              <Link
+                key={memory.id || memory.title}
+                href={memory.id ? `/memories/${memory.id}` : "#"}
+                className="group block rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md"
               >
                 <div
-                  className={`flex h-44 items-center justify-center rounded-t-2xl bg-gradient-to-br ${memory.color}`}
+                  className={`flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br ${memory.color || "from-primary/5 to-primary/10"}`}
                 >
-                  <ImageIcon
-                    size={48}
-                    className="text-foreground/15 transition-transform group-hover:scale-110"
-                  />
+                  {memory.imageUrl ? (
+                    <img
+                      src={memory.imageUrl}
+                      alt={memory.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon
+                      size={48}
+                      className="text-foreground/15 transition-transform group-hover:scale-110"
+                    />
+                  )}
                 </div>
                 <div className="p-5">
                   <div className="mb-2 flex items-center justify-between">
@@ -174,7 +234,7 @@ export default function MemoriesPage() {
                   <h3 className="text-lg font-semibold text-foreground">
                     {memory.title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">
                     {memory.description}
                   </p>
                   <p className="mt-2 text-xs text-muted">
@@ -185,19 +245,20 @@ export default function MemoriesPage() {
                   </p>
 
                   <div className="mt-3 flex items-center gap-5 border-t border-border pt-3">
-                    <button className="flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-red-500">
+                    <span className="flex items-center gap-1.5 text-sm text-muted">
                       <Heart size={16} />
-                      {memory.likes}
-                    </button>
-                    <button className="flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-primary">
+                      {memory.likes ?? 0}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-sm text-muted">
                       <MessageCircle size={16} />
-                      {memory.comments}
-                    </button>
+                      {memory.comments ?? 0}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
+          )}
         </div>
       </section>
 

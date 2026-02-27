@@ -1,7 +1,6 @@
 import {
   Users,
   Calendar,
-  MessageSquare,
   Heart,
   TrendingUp,
   Clock,
@@ -11,7 +10,6 @@ import {
 const statsCards = [
   { label: "Total Connections", value: "128", icon: Users, color: "bg-primary/10 text-primary" },
   { label: "Events Attended", value: "12", icon: Calendar, color: "bg-blue-500/10 text-blue-600" },
-  { label: "Messages", value: "34", icon: MessageSquare, color: "bg-purple-500/10 text-purple-600" },
   { label: "Donations Made", value: "৳5,200", icon: Heart, color: "bg-pink-500/10 text-pink-600" },
 ];
 

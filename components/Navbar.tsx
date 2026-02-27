@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Menu,
+  X,
+  GraduationCap,
+  User,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -10,12 +17,76 @@ const navLinks = [
   { href: "/alumni", label: "Alumni" },
   { href: "/events", label: "Events" },
   { href: "/donations", label: "Donations" },
-  { href: "/jobs", label: "Jobs & Career" },
   { href: "/memories", label: "Memories" },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [alumniUser, setAlumniUser] = useState<{
+    fullName: string;
+    email: string;
+    role?: "super_admin" | "admin" | "moderator" | "alumni";
+  } | null>(null);
+
+  useEffect(() => {
+    const hydrateUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.user?.fullName && result.user?.email) {
+            const user = {
+              fullName: result.user.fullName,
+              email: result.user.email,
+              role: result.user.role,
+            };
+            setAlumniUser(user);
+            localStorage.setItem("alumni_user", JSON.stringify(user));
+            return;
+          }
+        }
+      } catch {
+        // fallback to local cache
+      }
+
+      const rawUser = localStorage.getItem("alumni_user");
+      if (!rawUser) return;
+      try {
+        const parsed = JSON.parse(rawUser);
+        if (parsed?.fullName && parsed?.email) {
+          setAlumniUser({
+            fullName: parsed.fullName,
+            email: parsed.email,
+            role: parsed.role,
+          });
+        }
+      } catch {
+        localStorage.removeItem("alumni_user");
+      }
+    };
+
+    void hydrateUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      localStorage.removeItem("alumni_user");
+      setAlumniUser(null);
+      setProfileOpen(false);
+      setMobileOpen(false);
+      window.location.href = "/";
+    }
+  };
+
+  const dashboardHref =
+    alumniUser?.role === "super_admin" ||
+    alumniUser?.role === "admin" ||
+    alumniUser?.role === "moderator"
+      ? "/admin"
+      : "/dashboard";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md">
@@ -48,18 +119,66 @@ export default function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark"
-          >
-            Join Alumni
-          </Link>
+          {alumniUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-primary/5"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                  {alumniUser.fullName.charAt(0).toUpperCase()}
+                </div>
+                <span className="max-w-28 truncate text-sm font-medium text-foreground">
+                  {alumniUser.fullName}
+                </span>
+                <ChevronDown size={14} className="text-muted" />
+              </button>
+
+              {profileOpen ? (
+                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-white py-1 shadow-lg">
+                  <Link
+                    href={dashboardHref}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary hover:bg-gray-50"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <User size={14} />
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/dashboard/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <User size={14} />
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                  >
+                    <LogOut size={14} />
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark"
+              >
+                Join Alumni
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -85,24 +204,58 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
-            <li className="border-t border-border pt-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-primary"
-              >
-                Login
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/register"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg bg-primary px-3 py-2 text-center text-sm font-medium text-white"
-              >
-                Join Alumni
-              </Link>
-            </li>
+            {alumniUser ? (
+              <>
+                <li className="border-t border-border pt-2">
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm font-semibold text-primary"
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground"
+                  >
+                    Profile
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="block w-full rounded-lg bg-red-50 px-3 py-2 text-left text-sm font-medium text-red-600"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="border-t border-border pt-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-primary"
+                  >
+                    Login
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-lg bg-primary px-3 py-2 text-center text-sm font-medium text-white"
+                  >
+                    Join Alumni
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
