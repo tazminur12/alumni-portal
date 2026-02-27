@@ -59,6 +59,10 @@ export async function POST(request: Request) {
     if (!isAdminRole(currentUser.role)) {
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }
+    
+    if (currentUser.role === "moderator") {
+      return NextResponse.json({ message: "Moderators are not allowed to create users." }, { status: 403 });
+    }
 
     const body = await request.json();
 

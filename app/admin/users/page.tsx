@@ -49,6 +49,7 @@ export default function AdminUsersPage() {
   const [isRoleSaving, setIsRoleSaving] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [newUser, setNewUser] = useState({
     fullName: "",
     email: "",
@@ -61,6 +62,21 @@ export default function AdminUsersPage() {
     role: "alumni" as UserRole,
     status: "active" as UserStatus,
   });
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUserRole(data.user?.role);
+        }
+      } catch (error) {
+        console.error("Failed to fetch current user", error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -252,13 +268,15 @@ export default function AdminUsersPage() {
             View users, assign roles, and create new accounts
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
-        >
-          <UserPlus size={16} />
-          Create User
-        </button>
+        {currentUserRole !== "moderator" && (
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
+          >
+            <UserPlus size={16} />
+            Create User
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
