@@ -14,6 +14,7 @@ import {
 
 type DonationStatus = "received" | "pending" | "refunded";
 type DonationMethod = "bKash" | "Nagad" | "Bank" | "Card" | "Cash";
+type PaymentAccountItem = { label: string; details: string };
 type CampaignItem = {
   id: string;
   title: string;
@@ -23,6 +24,7 @@ type CampaignItem = {
   deadline: string;
   bannerImage: string;
   paymentAccount: string;
+  paymentAccounts?: PaymentAccountItem[];
   isActive: boolean;
 };
 
@@ -61,7 +63,7 @@ const emptyCampaignForm = {
   collectedAmount: "0",
   deadline: "",
   bannerImage: "",
-  paymentAccount: "",
+  paymentAccounts: [{ label: "bKash", details: "" }] as PaymentAccountItem[],
   isActive: true,
 };
 
@@ -77,8 +79,37 @@ export default function AdminDonationsPage() {
   const [editingCampaign, setEditingCampaign] = useState<CampaignItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCampaignSubmitting, setIsCampaignSubmitting] = useState(false);
+  const [isCampaignImageUploading, setIsCampaignImageUploading] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [campaignForm, setCampaignForm] = useState(emptyCampaignForm);
+
+  const uploadCampaignBanner = async (file: File) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      throw new Error("Cloudinary environment variables are missing.");
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    body.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    const result = await response.json();
+    if (!response.ok || !result.secure_url) {
+      throw new Error("Upload failed.");
+    }
+
+    return String(result.secure_url);
+  };
 
   const loadDonations = async () => {
     setLoading(true);
@@ -193,7 +224,12 @@ export default function AdminDonationsPage() {
       collectedAmount: String(campaign.collectedAmount),
       deadline: campaign.deadline,
       bannerImage: campaign.bannerImage,
-      paymentAccount: campaign.paymentAccount,
+      paymentAccounts:
+        campaign.paymentAccounts && campaign.paymentAccounts.length > 0
+          ? campaign.paymentAccounts
+          : campaign.paymentAccount
+            ? [{ label: "Payment", details: campaign.paymentAccount }]
+            : [{ label: "bKash", details: "" }],
       isActive: campaign.isActive,
     });
     setIsCampaignModalOpen(true);
@@ -244,6 +280,7 @@ export default function AdminDonationsPage() {
 
       closeModal();
       await loadDonations();
+      await loadCampaigns();
     } catch (error) {
       await Swal.fire({
         icon: "error",
@@ -259,10 +296,18 @@ export default function AdminDonationsPage() {
     event.preventDefault();
     setIsCampaignSubmitting(true);
     try {
+      const normalizedPaymentAccounts = (campaignForm.paymentAccounts ?? [])
+        .map((a) => ({
+          label: String(a.label ?? "").trim(),
+          details: String(a.details ?? "").trim(),
+        }))
+        .filter((a) => a.label || a.details);
+
       const payload = {
         ...campaignForm,
         targetAmount: Number(campaignForm.targetAmount),
         collectedAmount: Number(campaignForm.collectedAmount),
+        paymentAccounts: normalizedPaymentAccounts,
       };
 
       const endpoint = editingCampaign
@@ -326,6 +371,7 @@ export default function AdminDonationsPage() {
         showConfirmButton: false,
       });
       await loadDonations();
+      await loadCampaigns();
     } catch (error) {
       await Swal.fire({
         icon: "error",
@@ -494,7 +540,11 @@ export default function AdminDonationsPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">{campaign.deadline}</td>
                       <td className="px-4 py-3 text-sm text-muted">
-                        <p className="max-w-[220px] truncate">{campaign.paymentAccount}</p>
+                        <p className="max-w-[220px] truncate">
+                          {campaign.paymentAccounts?.[0]?.details ||
+                            campaign.paymentAccount ||
+                            "—"}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -739,28 +789,138 @@ export default function AdminDonationsPage() {
               />
               <input
                 value={campaignForm.bannerImage}
-                onChange={(event) =>
-                  setCampaignForm((prev) => ({
-                    ...prev,
-                    bannerImage: event.target.value,
-                  }))
-                }
-                placeholder="Banner image URL"
-                className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                disabled
+                placeholder="Banner image will be uploaded"
+                className="rounded-xl border border-border bg-gray-50 px-3 py-2 text-sm text-muted outline-none"
               />
-              <textarea
-                required
-                rows={2}
-                value={campaignForm.paymentAccount}
-                onChange={(event) =>
-                  setCampaignForm((prev) => ({
-                    ...prev,
-                    paymentAccount: event.target.value,
-                  }))
-                }
-                placeholder="Payment account details (Bkash/Nagad/Bank account)"
-                className="resize-none rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-2"
-              />
+              <div className="sm:col-span-2 rounded-xl border border-border p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">
+                    Payment accounts
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCampaignForm((prev) => ({
+                        ...prev,
+                        paymentAccounts: [
+                          ...(prev.paymentAccounts ?? []),
+                          { label: "", details: "" },
+                        ],
+                      }))
+                    }
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-gray-50"
+                  >
+                    + Add account
+                  </button>
+                </div>
+
+                <div className="grid gap-2">
+                  {(campaignForm.paymentAccounts ?? []).map((acc, idx) => (
+                    <div
+                      key={idx}
+                      className="grid gap-2 sm:grid-cols-5 items-start"
+                    >
+                      <input
+                        value={acc.label}
+                        onChange={(event) =>
+                          setCampaignForm((prev) => ({
+                            ...prev,
+                            paymentAccounts: (prev.paymentAccounts ?? []).map(
+                              (a, i) => (i === idx ? { ...a, label: event.target.value } : a)
+                            ),
+                          }))
+                        }
+                        placeholder="Label (bKash/Nagad/Bank)"
+                        className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-2"
+                      />
+                      <input
+                        value={acc.details}
+                        onChange={(event) =>
+                          setCampaignForm((prev) => ({
+                            ...prev,
+                            paymentAccounts: (prev.paymentAccounts ?? []).map(
+                              (a, i) =>
+                                i === idx ? { ...a, details: event.target.value } : a
+                            ),
+                          }))
+                        }
+                        placeholder="Account / instructions"
+                        className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCampaignForm((prev) => ({
+                            ...prev,
+                            paymentAccounts: (prev.paymentAccounts ?? []).filter(
+                              (_a, i) => i !== idx
+                            ),
+                          }))
+                        }
+                        disabled={(campaignForm.paymentAccounts ?? []).length <= 1}
+                        className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm">
+                  <span className="font-medium text-foreground">
+                    Campaign banner image
+                  </span>
+                  <span className="text-xs text-muted">
+                    {isCampaignImageUploading ? "Uploading..." : "Upload"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setIsCampaignImageUploading(true);
+                      try {
+                        const url = await uploadCampaignBanner(file);
+                        setCampaignForm((prev) => ({ ...prev, bannerImage: url }));
+                        await Swal.fire({
+                          icon: "success",
+                          title: "Banner uploaded",
+                          timer: 1000,
+                          showConfirmButton: false,
+                        });
+                      } catch (error) {
+                        await Swal.fire({
+                          icon: "error",
+                          title: "Upload failed",
+                          text:
+                            error instanceof Error
+                              ? error.message
+                              : "Could not upload image.",
+                        });
+                      } finally {
+                        setIsCampaignImageUploading(false);
+                        event.target.value = "";
+                      }
+                    }}
+                    disabled={isCampaignImageUploading}
+                  />
+                </label>
+
+                {campaignForm.bannerImage ? (
+                  <p className="mt-2 text-xs text-muted">
+                    Uploaded: {campaignForm.bannerImage}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-muted">
+                    No banner uploaded yet (optional).
+                  </p>
+                )}
+              </div>
               <label className="sm:col-span-2 flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
                 <input
                   type="checkbox"

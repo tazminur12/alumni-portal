@@ -12,6 +12,9 @@ import {
   BarChart3,
   GraduationCap,
   LogOut,
+  User,
+  Image,
+  Images,
   X,
   ChevronDown,
 } from "lucide-react";
@@ -23,7 +26,11 @@ const adminLinks = [
   { href: "/admin/events", label: "Events", icon: Calendar },
   { href: "/admin/event-registrations", label: "Event Registrations", icon: UserCheck },
   { href: "/admin/posts", label: "Posts", icon: FileText },
+  { href: "/admin/Featured-Alumni", label: "Featured Alumni", icon: User },
+  { href: "/admin/slideshow", label: "Slideshow", icon: Image },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/gallery", label: "Our Gallery", icon: Images },
+  { href: "/admin/profile", label: "Profile", icon: User },
 ];
 
 const donationSubLinks = [
@@ -32,8 +39,8 @@ const donationSubLinks = [
     label: "Donation Campaigns",
   },
   {
-    href: "/admin/donations/transparency",
-    label: "Donor List Post",
+    href: "/admin/donations/donor-list",
+    label: "Donor List",
   },
   {
     href: "/admin/donations/fund-usage",

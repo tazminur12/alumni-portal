@@ -47,13 +47,21 @@ export async function PATCH(
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }
 
-    const { title, content, status, category } = await req.json();
+    const { title, content, status, category, bannerImage } = await req.json();
 
     await connectDb();
     const { postId } = await params;
     const post = await Post.findByIdAndUpdate(
       postId,
-      { title, content, status, category },
+      {
+        title,
+        content,
+        status,
+        category,
+        ...(typeof bannerImage === "string"
+          ? { bannerImage: bannerImage.trim() }
+          : {}),
+      },
       { new: true }
     );
 

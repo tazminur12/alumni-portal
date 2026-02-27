@@ -3,12 +3,13 @@
 import { FormEvent, useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
-type DonationMethod = "bKash" | "Nagad" | "Bank" | "Card" | "Cash";
+type PaymentAccountItem = { label: string; details: string };
 
 type Campaign = {
   id: string;
   title: string;
   paymentAccount?: string;
+  paymentAccounts?: PaymentAccountItem[];
 };
 
 type UserData = {
@@ -36,25 +37,36 @@ export default function DonationModal({
   const [selectedCampaign, setSelectedCampaign] = useState(
     preselectedCampaign || campaigns[0]?.title || ""
   );
+  const [selectedPaymentLabel, setSelectedPaymentLabel] = useState("");
   const [form, setForm] = useState({
     donorName: "",
     campaign: "",
     amount: "",
-    method: "bKash" as DonationMethod,
+    method: "",
     donationDate: new Date().toISOString().slice(0, 10),
     note: "",
+    fromAccount: "",
   });
 
   useEffect(() => {
     if (isOpen && campaigns.length > 0) {
       const campaign = preselectedCampaign || campaigns[0].title;
+      const campaignData = campaigns.find((c) => c.title === campaign);
+      const accounts =
+        campaignData?.paymentAccounts && campaignData.paymentAccounts.length > 0
+          ? campaignData.paymentAccounts
+          : campaignData?.paymentAccount
+            ? [{ label: "Payment", details: campaignData.paymentAccount }]
+            : [];
+      const defaultLabel = accounts[0]?.label ?? "";
       setSelectedCampaign(campaign);
+      setSelectedPaymentLabel(defaultLabel);
       setForm((prev) => ({
         ...prev,
         donorName: user?.fullName || prev.donorName,
         campaign,
         amount: "",
-        method: "bKash",
+        method: defaultLabel,
         donationDate: new Date().toISOString().slice(0, 10),
         note: "",
       }));
@@ -64,6 +76,16 @@ export default function DonationModal({
   const selectedCampaignData = campaigns.find(
     (c) => c.title === selectedCampaign
   );
+  const campaignPaymentAccounts =
+    selectedCampaignData?.paymentAccounts && selectedCampaignData.paymentAccounts.length > 0
+      ? selectedCampaignData.paymentAccounts
+      : selectedCampaignData?.paymentAccount
+        ? [{ label: "Payment", details: selectedCampaignData.paymentAccount }]
+        : [];
+  const selectedPaymentDetails =
+    campaignPaymentAccounts.find((a) => a.label === selectedPaymentLabel)?.details ||
+    campaignPaymentAccounts[0]?.details ||
+    "";
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,7 +95,10 @@ export default function DonationModal({
         donorName: form.donorName.trim(),
         campaign: selectedCampaign,
         amount: Number(form.amount),
-        method: form.method,
+        method: selectedPaymentLabel || form.method,
+        sentToLabel: selectedPaymentLabel || form.method,
+        sentToDetails: selectedPaymentDetails,
+        fromAccount: form.fromAccount.trim(),
         donationDate: form.donationDate,
         note: form.note.trim(),
       };
@@ -174,7 +199,7 @@ export default function DonationModal({
               Where to send money (Payment Account)
             </p>
             <p className="mt-1 text-foreground">
-              {selectedCampaignData?.paymentAccount || "No account details yet."}
+              {selectedPaymentDetails || "No account details yet."}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -208,20 +233,22 @@ export default function DonationModal({
               <select
                 id="method"
                 required
-                value={form.method}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    method: e.target.value as DonationMethod,
-                  }))
-                }
+                value={selectedPaymentLabel}
+                onChange={(e) => {
+                  setSelectedPaymentLabel(e.target.value);
+                  setForm((prev) => ({ ...prev, method: e.target.value }));
+                }}
                 className="w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
               >
-                <option value="bKash">bKash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-                <option value="Cash">Cash</option>
+                {campaignPaymentAccounts.length === 0 ? (
+                  <option value="">No payment accounts</option>
+                ) : (
+                  campaignPaymentAccounts.map((acc, idx) => (
+                    <option key={`${acc.label}-${idx}`} value={acc.label}>
+                      {acc.label || `Payment ${idx + 1}`}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
@@ -257,6 +284,23 @@ export default function DonationModal({
                 setForm((prev) => ({ ...prev, note: e.target.value }))
               }
               placeholder="Transaction ID or note"
+              className="w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="fromAccount"
+              className="mb-1 block text-sm font-medium text-foreground"
+            >
+              Your payment account / number (optional)
+            </label>
+            <input
+              id="fromAccount"
+              value={form.fromAccount}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, fromAccount: e.target.value }))
+              }
+              placeholder="e.g. your bKash/Nagad/Bank account you paid from"
               className="w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
           </div>

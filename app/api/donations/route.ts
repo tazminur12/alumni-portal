@@ -3,13 +3,21 @@ import { NextResponse } from "next/server";
 import { connectDb } from "@/lib/db";
 import Donation from "@/models/Donation";
 
-function validateDonationBody(body: any) {
-  const donorName = body.donorName?.trim();
-  const campaign = body.campaign?.trim();
+function validateDonationBody(body: Record<string, unknown>) {
+  const donorName =
+    typeof body.donorName === "string" ? body.donorName.trim() : "";
+  const campaign = typeof body.campaign === "string" ? body.campaign.trim() : "";
   const amount = Number(body.amount);
-  const method = body.method?.trim();
-  const donationDate = body.donationDate?.trim();
-  const note = body.note?.trim() || "";
+  const method = typeof body.method === "string" ? body.method.trim() : "";
+  const donationDate =
+    typeof body.donationDate === "string" ? body.donationDate.trim() : "";
+  const note = typeof body.note === "string" ? body.note.trim() : "";
+  const sentToLabel =
+    typeof body.sentToLabel === "string" ? body.sentToLabel.trim() : "";
+  const sentToDetails =
+    typeof body.sentToDetails === "string" ? body.sentToDetails.trim() : "";
+  const fromAccount =
+    typeof body.fromAccount === "string" ? body.fromAccount.trim() : "";
 
   if (!donorName || !campaign || !method || !donationDate) {
     return { error: "Donor name, campaign, payment method and date are required." };
@@ -19,16 +27,15 @@ function validateDonationBody(body: any) {
     return { error: "Amount must be a valid positive number." };
   }
 
-  if (!["bKash", "Nagad", "Bank", "Card", "Cash"].includes(method)) {
-    return { error: "Invalid payment method." };
-  }
-
   return {
     data: {
       donorName,
       campaign,
       amount,
       method,
+      sentToLabel,
+      sentToDetails,
+      fromAccount,
       donationDate,
       note,
     },
@@ -63,6 +70,9 @@ export async function GET() {
         campaign: donation.campaign,
         amount: donation.amount,
         method: donation.method,
+        sentToLabel: donation.sentToLabel ?? "",
+        sentToDetails: donation.sentToDetails ?? "",
+        fromAccount: donation.fromAccount ?? "",
         donationDate: donation.donationDate,
         status: donation.status,
         createdAt: donation.createdAt,
@@ -78,7 +88,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const validated = validateDonationBody(body);
     if ("error" in validated) {
       return NextResponse.json({ message: validated.error }, { status: 400 });

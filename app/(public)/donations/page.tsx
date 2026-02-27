@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Heart, Users, TrendingUp, ArrowRight, Gift, Plus } from "lucide-react";
 import DonationModal from "@/components/DonationModal";
 
@@ -13,6 +14,7 @@ type Campaign = {
   deadline: string;
   bannerImage: string;
   paymentAccount: string;
+  paymentAccounts?: Array<{ label: string; details: string }>;
 };
 
 export default function DonationsPage() {
@@ -193,9 +195,11 @@ export default function DonationsPage() {
                   >
                     <div className="h-36 overflow-hidden rounded-t-2xl bg-linear-to-br from-primary/5 to-primary/10">
                       {campaign.bannerImage ? (
-                        <img
+                        <Image
                           src={campaign.bannerImage}
                           alt={campaign.title}
+                          width={800}
+                          height={400}
                           className="h-full w-full object-cover"
                         />
                       ) : (
@@ -233,9 +237,6 @@ export default function DonationsPage() {
                           <span>Deadline: {campaign.deadline}</span>
                         </div>
                       </div>
-                      <p className="mt-2 rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
-                        Account: {campaign.paymentAccount}
-                      </p>
 
                       <button
                         onClick={() => openDonationModal(campaign.title)}

@@ -12,6 +12,7 @@ type CampaignBody = {
   deadline?: string;
   bannerImage?: string;
   paymentAccount?: string;
+  paymentAccounts?: Array<{ label?: string; details?: string }>;
   isActive?: boolean;
 };
 
@@ -22,13 +23,27 @@ function validateCampaignBody(body: CampaignBody) {
   const collectedAmount = Number(body.collectedAmount ?? 0);
   const deadline = body.deadline?.trim();
   const bannerImage = body.bannerImage?.trim() || "";
-  const paymentAccount = body.paymentAccount?.trim();
+  const paymentAccounts =
+    Array.isArray(body.paymentAccounts) && body.paymentAccounts.length > 0
+      ? body.paymentAccounts
+          .map((a) => ({
+            label: String(a?.label ?? "").trim(),
+            details: String(a?.details ?? "").trim(),
+          }))
+          .filter((a) => a.label || a.details)
+      : typeof body.paymentAccount === "string" && body.paymentAccount.trim()
+        ? [{ label: "Payment", details: body.paymentAccount.trim() }]
+        : [];
+  const legacyPaymentAccount = paymentAccounts
+    .map((a) => (a.label ? `${a.label}: ${a.details}` : a.details))
+    .filter(Boolean)
+    .join("\n");
   const isActive = Boolean(body.isActive);
 
-  if (!title || !description || !deadline || !paymentAccount) {
+  if (!title || !description || !deadline || paymentAccounts.length === 0) {
     return {
       error:
-        "Campaign title, description, deadline and payment account are required.",
+        "Campaign title, description, deadline and at least one payment account are required.",
     };
   }
 
@@ -50,7 +65,9 @@ function validateCampaignBody(body: CampaignBody) {
       deadline,
       bannerImage,
       imageEmoji: bannerImage || "🎯",
-      paymentAccount,
+      // keep legacy field populated for older schema / UI
+      paymentAccount: legacyPaymentAccount,
+      paymentAccounts,
       isActive,
     },
   };

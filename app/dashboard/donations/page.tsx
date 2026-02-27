@@ -13,6 +13,7 @@ type Campaign = {
   deadline: string;
   bannerImage?: string;
   paymentAccount?: string;
+  paymentAccounts?: Array<{ label: string; details: string }>;
 };
 
 type MyDonation = {

@@ -19,6 +19,7 @@ type EventItem = {
   isRegistrationOpen: boolean;
   registrationDeadline?: string;
   registeredAttendees?: number;
+  bannerImage?: string;
   createdAt: string;
 };
 
@@ -33,6 +34,7 @@ const emptyForm = {
   status: "draft" as EventStatus,
   isRegistrationOpen: false,
   registrationDeadline: "",
+  bannerImage: "",
 };
 
 const statusColors: Record<EventStatus, string> = {
@@ -49,6 +51,35 @@ export default function AdminEventsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+
+  const uploadEventBanner = async (file: File) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      throw new Error("Cloudinary environment variables are missing.");
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    body.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    const result = await response.json();
+    if (!response.ok || !result.secure_url) {
+      throw new Error("Upload failed.");
+    }
+
+    return String(result.secure_url);
+  };
 
   const loadEvents = async () => {
     setLoading(true);
@@ -105,6 +136,7 @@ export default function AdminEventsPage() {
       status: event.status,
       isRegistrationOpen: event.isRegistrationOpen || false,
       registrationDeadline: event.registrationDeadline || "",
+      bannerImage: event.bannerImage || "",
     });
     setIsModalOpen(true);
   };
@@ -416,6 +448,64 @@ export default function AdminEventsPage() {
                 placeholder="Type (Reunion/Seminar/etc)"
                 className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-primary"
               />
+              <input
+                value={form.bannerImage}
+                disabled
+                placeholder="Event banner image will be uploaded"
+                className="rounded-xl border border-border bg-gray-50 px-3 py-2 text-sm text-muted outline-none sm:col-span-2"
+              />
+              <div className="sm:col-span-2">
+                <label className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm cursor-pointer">
+                  <span className="font-medium text-foreground">
+                    Upload event banner image
+                  </span>
+                  <span className="text-xs text-muted">
+                    {isImageUploading ? "Uploading..." : "Choose file"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setIsImageUploading(true);
+                      try {
+                        const url = await uploadEventBanner(file);
+                        setForm((prev) => ({ ...prev, bannerImage: url }));
+                        await Swal.fire({
+                          icon: "success",
+                          title: "Banner uploaded",
+                          timer: 1000,
+                          showConfirmButton: false,
+                        });
+                      } catch (error) {
+                        await Swal.fire({
+                          icon: "error",
+                          title: "Upload failed",
+                          text:
+                            error instanceof Error
+                              ? error.message
+                              : "Could not upload image.",
+                        });
+                      } finally {
+                        setIsImageUploading(false);
+                        event.target.value = "";
+                      }
+                    }}
+                    disabled={isImageUploading}
+                  />
+                </label>
+                {form.bannerImage ? (
+                  <p className="mt-2 text-xs text-muted">
+                    Uploaded: {form.bannerImage}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-muted">
+                    No banner uploaded yet (optional).
+                  </p>
+                )}
+              </div>
               <input
                 required
                 type="number"

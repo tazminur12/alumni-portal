@@ -12,6 +12,7 @@ export interface IEvent {
   isRegistrationOpen: boolean;
   registrationDeadline?: string;
   registeredAttendees: number;
+  bannerImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,6 +73,11 @@ const eventSchema = new Schema<IEvent>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    bannerImage: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   { timestamps: true }

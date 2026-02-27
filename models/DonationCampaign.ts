@@ -7,7 +7,13 @@ export interface IDonationCampaign {
   collectedAmount: number;
   deadline: string;
   bannerImage: string;
-  paymentAccount: string;
+  // legacy single-field storage (kept for backward compatibility)
+  paymentAccount?: string;
+  // preferred: multiple payment accounts
+  paymentAccounts: Array<{
+    label: string;
+    details: string;
+  }>;
   isActive: boolean;
 }
 
@@ -48,8 +54,17 @@ const donationCampaignSchema = new Schema<IDonationCampaign>(
     },
     paymentAccount: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
+    },
+    paymentAccounts: {
+      type: [
+        {
+          label: { type: String, default: "", trim: true },
+          details: { type: String, default: "", trim: true },
+        },
+      ],
+      default: [],
     },
     isActive: {
       type: Boolean,
@@ -65,12 +80,37 @@ const existingDonationCampaignModel = models.DonationCampaign as
   | undefined;
 
 if (existingDonationCampaignModel) {
+  // If the model was compiled with older schema, relax required constraint at runtime.
+  const paymentAccountPath = existingDonationCampaignModel.schema.path("paymentAccount");
+  if (paymentAccountPath) {
+    // Mongoose schema types expose `.required(...)` and `.options` but types are loose here.
+    const schemaType = paymentAccountPath as unknown as {
+      required?: (required: boolean) => void;
+      options?: { required?: boolean };
+    };
+    if (typeof schemaType.required === "function") {
+      schemaType.required(false);
+    }
+    if (schemaType.options) {
+      schemaType.options.required = false;
+    }
+  }
+
   const extraFields = {
     targetAmount: { type: Number, min: 0, default: 0 },
     collectedAmount: { type: Number, min: 0, default: 0 },
     deadline: { type: String, default: "", trim: true },
     bannerImage: { type: String, default: "", trim: true },
     paymentAccount: { type: String, default: "", trim: true },
+    paymentAccounts: {
+      type: [
+        {
+          label: { type: String, default: "", trim: true },
+          details: { type: String, default: "", trim: true },
+        },
+      ],
+      default: [],
+    },
   };
 
   for (const [field, options] of Object.entries(extraFields)) {

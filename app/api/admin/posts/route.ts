@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       author: currentUser.fullName || "Admin",
       status: status || "Draft",
       category: category || "Announcement",
+      bannerImage: typeof body.bannerImage === "string" ? body.bannerImage.trim() : "",
     });
 
     return NextResponse.json(newPost, { status: 201 });

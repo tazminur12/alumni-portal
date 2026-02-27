@@ -38,6 +38,7 @@ export async function GET() {
         profilePicture: user.profilePicture ?? "",
         role: user.role ?? "alumni",
         status: user.status ?? "active",
+        isFeatured: Boolean(user.isFeatured),
         createdAt: user.createdAt,
       })),
     });

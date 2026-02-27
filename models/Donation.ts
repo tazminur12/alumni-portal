@@ -4,7 +4,13 @@ export interface IDonation {
   donorName: string;
   campaign: string;
   amount: number;
-  method: "bKash" | "Nagad" | "Bank" | "Card" | "Cash";
+  // payment method / channel label (admin-defined)
+  method: string;
+  // which receiver account was used (snapshot at time of donation)
+  sentToLabel?: string;
+  sentToDetails?: string;
+  // sender account/number used to pay
+  fromAccount?: string;
   donationDate: string;
   note?: string;
   status: "received" | "pending" | "refunded";
@@ -32,9 +38,24 @@ const donationSchema = new Schema<IDonation>(
     },
     method: {
       type: String,
-      enum: ["bKash", "Nagad", "Bank", "Card", "Cash"],
       required: true,
       index: true,
+      trim: true,
+    },
+    sentToLabel: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    sentToDetails: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    fromAccount: {
+      type: String,
+      default: "",
+      trim: true,
     },
     donationDate: {
       type: String,

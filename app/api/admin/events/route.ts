@@ -15,6 +15,7 @@ function validateEventBody(body: Record<string, unknown>) {
   const status = typeof body.status === "string" ? body.status.trim() : "";
   const isRegistrationOpen = Boolean(body.isRegistrationOpen);
   const registrationDeadline = typeof body.registrationDeadline === "string" ? body.registrationDeadline.trim() : undefined;
+  const bannerImage = typeof body.bannerImage === "string" ? body.bannerImage.trim() : "";
 
   if (!title || !description || !date || !time || !location || !type) {
     return { error: "All event fields are required." };
@@ -40,6 +41,7 @@ function validateEventBody(body: Record<string, unknown>) {
       status,
       isRegistrationOpen,
       registrationDeadline,
+      bannerImage,
     },
   };
 }
@@ -72,6 +74,7 @@ export async function GET() {
         isRegistrationOpen: event.isRegistrationOpen || false,
         registrationDeadline: event.registrationDeadline || "",
         registeredAttendees: event.registeredAttendees || 0,
+        bannerImage: event.bannerImage || "",
         createdAt: event.createdAt,
       })),
     });

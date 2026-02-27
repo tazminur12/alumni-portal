@@ -12,36 +12,50 @@ import { connectDb } from "@/lib/db";
 import { getCurrentUser } from "@/lib/current-user";
 import User from "@/models/User";
 import Event from "@/models/Event";
+import Slideshow from "@/models/Slideshow";
+import FeaturedAlumni from "@/components/FeaturedAlumni";
+import HeroSlideshow from "@/components/HeroSlideshow";
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
+const fallbackHeroImage =
+  process.env.NEXT_PUBLIC_HERO_IMAGE === ""
+    ? ""
+    : (process.env.NEXT_PUBLIC_HERO_IMAGE || "/Hero.jpg");
 
 export default async function HomePage() {
   await connectDb();
 
-  const [currentUser, alumniCount, batches, eventsCount, featuredAlumni, upcomingEvents] =
-    await Promise.all([
-      getCurrentUser(),
-      User.countDocuments({ status: "active", role: "alumni" }),
-      User.distinct("batch", { status: "active", role: "alumni" }),
-      Event.countDocuments(),
-      User.find({ status: "active", role: "alumni" })
-        .select("fullName batch profession profilePicture")
-        .sort({ createdAt: -1 })
-        .limit(4)
-        .lean(),
-      Event.find({ status: "upcoming" })
-        .select("title date time location type")
-        .sort({ date: 1 })
-        .limit(3)
-        .lean(),
-    ]);
+  const [
+    currentUser,
+    alumniCount,
+    batches,
+    eventsCount,
+    featuredAlumni,
+    upcomingEvents,
+    slideshowSlides,
+  ] = await Promise.all([
+    getCurrentUser(),
+    User.countDocuments({ status: "active", role: "alumni" }),
+    User.distinct("batch", { status: "active", role: "alumni" }),
+    Event.countDocuments(),
+    User.find({ status: "active", role: "alumni", isFeatured: true })
+      .select("fullName batch profilePicture location collegeName universityName")
+      .sort({ createdAt: -1 })
+      .limit(4)
+      .lean(),
+    Event.find({ status: "upcoming" })
+      .select("title date time location type bannerImage")
+      .sort({ date: 1 })
+      .limit(3)
+      .lean(),
+    Slideshow.find().sort({ order: 1, createdAt: 1 }).lean(),
+  ]);
+
+  const slides = slideshowSlides.map((s) => ({
+    id: String(s._id),
+    imageUrl: s.imageUrl,
+    caption: s.caption || "",
+  }));
+  const heroImage = slides.length > 0 ? null : fallbackHeroImage;
 
   const totalBatches = batches.filter(Boolean).length;
   const stats = [
@@ -53,40 +67,68 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light">
+      <section className="relative overflow-hidden bg-linear-to-br from-primary-dark via-primary to-primary-light">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white/90 backdrop-blur-sm">
-              <GraduationCap size={16} />
-              Amtoli Model High School, Shibganj, Bogura
-            </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Welcome to Our{" "}
-              <span className="text-accent-light">Alumni Portal</span>
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-white/80 sm:text-xl">
-              Reconnect with classmates, share memories, and stay updated with
-              school events. Join a growing network of alumni building the
-              future together.
-            </p>
-            {!currentUser && (
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-amber-600"
-                >
-                  Join Alumni Network
-                  <ArrowRight size={16} />
-                </Link>
-                <Link
-                  href="/alumni"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
-                >
-                  Browse Alumni
-                </Link>
+        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8 lg:py-40">
+          <div
+            className={
+              heroImage || slides.length > 0
+                ? "flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12"
+                : "mx-auto max-w-3xl text-center"
+            }
+          >
+            <div
+            className={
+              heroImage || slides.length > 0
+                ? "flex-1 text-center lg:text-left"
+                : "mx-auto max-w-3xl text-center"
+            }
+            >
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white/90 backdrop-blur-sm">
+                <GraduationCap size={16} />
+                Amtoli Model High School, Shibganj, Bogura
               </div>
-            )}
+              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Welcome to Our{" "}
+                <span className="text-accent-light">Alumni Portal</span>
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-white/80 sm:text-xl">
+                Reconnect with classmates, share memories, and stay updated with
+                school events. Join a growing network of alumni building the
+                future together.
+              </p>
+              {!currentUser && (
+                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-amber-600"
+                  >
+                    Join Alumni Network
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/alumni"
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                  >
+                    Browse Alumni
+                  </Link>
+                </div>
+              )}
+            </div>
+            {slides.length > 0 ? (
+              <HeroSlideshow slides={slides} />
+            ) : heroImage ? (
+              <div className="relative my-8 h-96 w-full shrink-0 overflow-hidden sm:my-10 sm:h-104 lg:my-12 lg:h-128 lg:w-xl lg:max-w-none">
+                <Image
+                  src={heroImage}
+                  alt="Alumni Portal"
+                  fill
+                  sizes="(min-width: 1024px) 576px, (min-width: 640px) 100vw, 100vw"
+                  className="object-contain object-center"
+                  priority
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -125,118 +167,83 @@ export default async function HomePage() {
       </section>
 
       {/* Alumni Highlights */}
-      <section className="bg-background py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-foreground">
-              Featured Alumni
-            </h2>
-            <p className="mt-2 text-muted">
-              Celebrating the achievements of our proud alumni
-            </p>
-          </div>
-
-          {featuredAlumni.length > 0 ? (
-            <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {featuredAlumni.map((alumni) => (
-                  <Link
-                    key={String(alumni._id)}
-                    href={`/alumni/${String(alumni._id)}`}
-                    className="group rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xl font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                      {alumni.profilePicture ? (
-                        <Image
-                          src={alumni.profilePicture}
-                          alt={alumni.fullName}
-                          width={64}
-                          height={64}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        getInitials(alumni.fullName)
-                      )}
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {alumni.fullName}
-                    </h3>
-                    <p className="text-sm text-primary">Batch {alumni.batch}</p>
-                    <p className="mt-1 text-sm text-muted">
-                      {alumni.profession || "—"}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-              <div className="mt-10 text-center">
-                <Link
-                  href="/alumni"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                >
-                  View All Alumni
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-2xl border border-border bg-card p-12 text-center text-muted">
-              No alumni yet. Be the first to register!
-            </div>
-          )}
-        </div>
-      </section>
+      <FeaturedAlumni featuredAlumni={featuredAlumni} />
 
       {/* Upcoming Events */}
       <section className="border-t border-border bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-foreground">
-              Upcoming Events
-            </h2>
-            <p className="mt-2 text-muted">
-              Join us at these exciting upcoming events
-            </p>
+          <div className="mb-10 flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground">
+                Upcoming Events
+              </h2>
+              <p className="mt-2 text-muted">
+                Join the next few programs happening soon
+              </p>
+            </div>
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-gray-50"
+            >
+              View all events
+              <ArrowRight size={14} />
+            </Link>
           </div>
 
           {upcomingEvents.length > 0 ? (
-            <>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {upcomingEvents.map((event) => (
                   <Link
                     key={String(event._id)}
                     href="/events"
-                    className="group rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
                   >
-                    <span className="mb-3 inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-                      {event.type || "Event"}
-                    </span>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {event.title}
-                    </h3>
-                    <div className="mt-3 space-y-2">
-                      <p className="flex items-center gap-2 text-sm text-muted">
-                        <Clock size={14} />
-                        {event.date}
-                        {event.time ? ` • ${event.time}` : ""}
-                      </p>
-                      <p className="flex items-center gap-2 text-sm text-muted">
-                        <MapPin size={14} />
-                        {event.location}
-                      </p>
+                    {event.bannerImage && (
+                      <div className="relative w-full overflow-hidden bg-gray-100 pb-[56.25%]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={event.bannerImage}
+                          alt={event.title}
+                          className="absolute inset-0 h-full w-full object-cover object-center"
+                        />
+                      </div>
+                    )}
+                    <div className="flex flex-1 flex-col p-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
+                          {event.type || "Event"}
+                        </span>
+                        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                          Upcoming
+                        </span>
+                      </div>
+                      <h3 className="text-base font-semibold text-foreground sm:text-lg">
+                        {event.title}
+                      </h3>
+                      <div className="mt-3 space-y-2 text-sm text-muted">
+                        <p className="flex items-center gap-2">
+                          <Clock size={14} className="text-primary" />
+                          <span>
+                            {event.date}
+                            {event.time ? ` • ${event.time}` : ""}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <MapPin size={14} className="text-primary" />
+                          <span className="truncate">{event.location}</span>
+                        </p>
+                      </div>
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+                        View event details
+                        <ArrowRight
+                          size={14}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
+                      </span>
                     </div>
                   </Link>
                 ))}
               </div>
-              <div className="mt-10 text-center">
-                <Link
-                  href="/events"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                >
-                  View All Events
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </>
           ) : (
             <div className="rounded-2xl border border-border bg-card p-12 text-center text-muted">
               No upcoming events at the moment.

@@ -457,22 +457,22 @@ export default function AdminUsersPage() {
                   <ShieldCheck size={15} />
                   Assign Role
                 </p>
-                <div className="space-y-2">
-                  {roleOptions.map((role) => (
-                    <button
-                      key={role.value}
-                      type="button"
-                      disabled={isRoleSaving}
-                      onClick={() => handleRoleUpdate(role.value)}
-                      className={`w-full rounded-xl border px-3 py-2 text-left text-sm font-medium transition-colors ${
-                        selectedUser.role === role.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-foreground hover:bg-gray-50"
-                      }`}
-                    >
-                      {role.label}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <select
+                    aria-label="Assign role"
+                    value={selectedUser.role}
+                    onChange={(event) =>
+                      handleRoleUpdate(event.target.value as UserRole)
+                    }
+                    disabled={isRoleSaving}
+                    className="flex-1 rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {roleOptions.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

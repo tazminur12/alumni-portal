@@ -15,6 +15,7 @@ type CampaignLean = {
   bannerImage?: string;
   imageEmoji?: string;
   paymentAccount?: string;
+  paymentAccounts?: Array<{ label?: string; details?: string }>;
 };
 
 export async function GET() {
@@ -24,20 +25,40 @@ export async function GET() {
     const campaigns = await DonationCampaign.find({ isActive: true })
       .sort({ createdAt: -1 })
       .lean();
+    const receivedTotals = await Donation.aggregate([
+      { $match: { status: "received" } },
+      { $group: { _id: "$campaign", total: { $sum: "$amount" } } },
+    ]);
+    const receivedMap = new Map<string, number>(
+      receivedTotals.map((r: any) => [String(r._id), Number(r.total ?? 0)])
+    );
     const totalDonors = await Donation.countDocuments({
       status: { $ne: "refunded" },
     });
 
     const campaignItems = (campaigns as CampaignLean[]).map((campaign) => {
+      const title = String(campaign.title ?? "");
+      const computedCollected = receivedMap.get(title);
       return {
         id: String(campaign._id),
-        title: campaign.title,
+        title,
         description: campaign.description,
         targetAmount: Number(campaign.targetAmount ?? campaign.goalAmount ?? 0),
-        collectedAmount: Number(campaign.collectedAmount ?? 0),
+        collectedAmount:
+          typeof computedCollected === "number"
+            ? computedCollected
+            : Number(campaign.collectedAmount ?? 0),
         deadline: campaign.deadline ?? "",
         bannerImage: campaign.bannerImage ?? campaign.imageEmoji ?? "",
         paymentAccount: campaign.paymentAccount ?? "",
+        paymentAccounts: Array.isArray(campaign.paymentAccounts)
+          ? campaign.paymentAccounts.map((a) => ({
+              label: String(a?.label ?? ""),
+              details: String(a?.details ?? ""),
+            }))
+          : campaign.paymentAccount
+            ? [{ label: "Payment", details: campaign.paymentAccount }]
+            : [],
       };
     });
 

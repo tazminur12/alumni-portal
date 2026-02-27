@@ -44,6 +44,17 @@ export async function PATCH(request: Request) {
       phone: body.phone?.trim() || "",
       location: body.location?.trim() || "",
       bio: body.bio?.trim() || "",
+      whatsapp: body.whatsapp?.trim() || "",
+      linkedin: body.linkedin?.trim() || "",
+      facebook: body.facebook?.trim() || "",
+      instagram: body.instagram?.trim() || "",
+      skills: body.skills?.trim() || "",
+      website: body.website?.trim() || "",
+      currentJobTitle: body.currentJobTitle?.trim() || "",
+      company: body.company?.trim() || "",
+      industry: body.industry?.trim() || "",
+      workLocation: body.workLocation?.trim() || "",
+      department: body.department?.trim() || "",
     };
 
     const profilePicture = body.profilePicture?.trim();
@@ -79,6 +90,17 @@ export async function PATCH(request: Request) {
         phone: updatedUser.phone ?? "",
         location: updatedUser.location ?? "",
         bio: updatedUser.bio ?? "",
+        whatsapp: updatedUser.whatsapp ?? "",
+        linkedin: updatedUser.linkedin ?? "",
+        facebook: updatedUser.facebook ?? "",
+        instagram: updatedUser.instagram ?? "",
+        skills: updatedUser.skills ?? "",
+        website: updatedUser.website ?? "",
+        currentJobTitle: updatedUser.currentJobTitle ?? "",
+        company: updatedUser.company ?? "",
+        industry: updatedUser.industry ?? "",
+        workLocation: updatedUser.workLocation ?? "",
+        department: updatedUser.department ?? "",
       },
     });
   } catch {

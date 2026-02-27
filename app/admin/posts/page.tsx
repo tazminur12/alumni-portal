@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Search, FileText, X, Edit, Trash, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  FileText,
+  X,
+  Edit,
+  Trash,
+  Loader2,
+  Image as ImageIcon,
+} from "lucide-react";
+import Image from "next/image";
 
 interface Post {
   _id: string;
@@ -10,6 +20,7 @@ interface Post {
   author: string;
   category: string;
   status: string;
+  bannerImage?: string;
   createdAt: string;
 }
 
@@ -38,8 +49,38 @@ export default function AdminPostsPage() {
     content: "",
     category: "Announcement",
     status: "Draft",
+    bannerImage: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+
+  const uploadPostBanner = async (file: File) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      throw new Error("Cloudinary environment variables are missing.");
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    body.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    const result = await response.json();
+    if (!response.ok || !result.secure_url) {
+      throw new Error("Upload failed.");
+    }
+
+    return String(result.secure_url);
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -119,6 +160,7 @@ export default function AdminPostsPage() {
         content: post.content,
         category: post.category,
         status: post.status,
+        bannerImage: post.bannerImage || "",
       });
     } else {
       setCurrentPost(null);
@@ -126,7 +168,8 @@ export default function AdminPostsPage() {
         title: "",
         content: "",
         category: "Announcement",
-        status: "Draft",
+        status: "Published",
+        bannerImage: "",
       });
     }
     setIsModalOpen(true);
@@ -140,21 +183,30 @@ export default function AdminPostsPage() {
       content: "",
       category: "Announcement",
       status: "Draft",
+      bannerImage: "",
     });
   };
 
-  const filteredPosts = posts.filter((post) =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPosts = posts.filter((post) => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      post.title.toLowerCase().includes(q) ||
+      post.category.toLowerCase().includes(q) ||
+      post.status.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            Post Management
+            Posts & Announcements
           </h2>
-          <p className="text-sm text-muted">Manage alumni posts and articles</p>
+          <p className="text-sm text-muted">
+            Publish updates that will appear on the public Announcements page.
+          </p>
         </div>
         <button
           onClick={() => openModal()}
@@ -222,12 +274,27 @@ export default function AdminPostsPage() {
                   <tr key={post._id} className="hover:bg-gray-50/50">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <FileText size={16} />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary">
+                          {post.bannerImage ? (
+                            <Image
+                              src={post.bannerImage}
+                              alt={post.title}
+                              width={36}
+                              height={36}
+                              className="h-full w-full object-cover object-center"
+                            />
+                          ) : (
+                            <FileText size={16} />
+                          )}
                         </div>
-                        <span className="text-sm font-medium text-foreground">
-                          {post.title}
-                        </span>
+                        <div>
+                          <p className="max-w-xs truncate text-sm font-medium text-foreground">
+                            {post.title}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-sm text-muted">
@@ -283,21 +350,29 @@ export default function AdminPostsPage() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-lg">
-            <div className="flex items-center justify-between border-b p-4">
-              <h3 className="text-lg font-bold">
-                {currentPost ? "Edit Post" : "New Post"}
-              </h3>
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {currentPost ? "Edit Post" : "Create Post"}
+                </h3>
+                <p className="text-xs text-muted">
+                  These posts will be shown on the public Announcements page.
+                </p>
+              </div>
               <button
                 onClick={closeModal}
-                className="rounded-lg p-1 hover:bg-gray-100"
+                className="rounded-lg p-1.5 text-muted hover:bg-gray-100"
                 title="Close Modal"
               >
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
-              <div>
+            <form
+              onSubmit={handleSubmit}
+              className="grid gap-4 px-5 py-4 sm:grid-cols-2"
+            >
+              <div className="sm:col-span-2">
                 <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-700">
                   Title
                 </label>
@@ -348,14 +423,14 @@ export default function AdminPostsPage() {
                   <option value="Review">Review</option>
                 </select>
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label htmlFor="content" className="mb-1 block text-sm font-medium text-gray-700">
                   Content
                 </label>
                 <textarea
                   id="content"
                   required
-                  rows={4}
+                  rows={5}
                   value={formData.content}
                   onChange={(e) =>
                     setFormData({ ...formData, content: e.target.value })
@@ -363,7 +438,52 @@ export default function AdminPostsPage() {
                   className="w-full rounded-xl border border-border p-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="space-y-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Featured image (optional)
+                </label>
+                <input
+                  value={formData.bannerImage}
+                  disabled
+                  placeholder="Image URL will appear here after upload"
+                  className="w-full rounded-xl border border-border bg-gray-50 p-2.5 text-xs text-muted outline-none"
+                />
+                <label className="mt-1 flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2 text-xs text-foreground">
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    <ImageIcon size={14} />
+                    Upload image
+                  </span>
+                  <span className="text-[11px] text-muted">
+                    {isImageUploading ? "Uploading..." : "Choose file"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setIsImageUploading(true);
+                      try {
+                        const url = await uploadPostBanner(file);
+                        setFormData((prev) => ({ ...prev, bannerImage: url }));
+                      } catch (error) {
+                        console.error(error);
+                        alert(
+                          error instanceof Error
+                            ? error.message
+                            : "Could not upload image."
+                        );
+                      } finally {
+                        setIsImageUploading(false);
+                        event.target.value = "";
+                      }
+                    }}
+                    disabled={isImageUploading}
+                  />
+                </label>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2 sm:col-span-2">
                 <button
                   type="button"
                   onClick={closeModal}

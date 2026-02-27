@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser, isAdminRole } from "@/lib/current-user";
 import { connectDb } from "@/lib/db";
 import DonationCampaign from "@/models/DonationCampaign";
+import Donation from "@/models/Donation";
 
 type CampaignBody = {
   title?: string;
@@ -12,6 +13,7 @@ type CampaignBody = {
   deadline?: string;
   bannerImage?: string;
   paymentAccount?: string;
+  paymentAccounts?: Array<{ label?: string; details?: string }>;
   isActive?: boolean;
 };
 
@@ -26,6 +28,7 @@ type CampaignLean = {
   bannerImage?: string;
   imageEmoji?: string;
   paymentAccount?: string;
+  paymentAccounts?: Array<{ label?: string; details?: string }>;
   isActive?: boolean;
   createdAt?: Date | string;
 };
@@ -37,13 +40,27 @@ function validateCampaignBody(body: CampaignBody) {
   const collectedAmount = Number(body.collectedAmount ?? 0);
   const deadline = body.deadline?.trim();
   const bannerImage = body.bannerImage?.trim() || "";
-  const paymentAccount = body.paymentAccount?.trim();
+  const paymentAccounts =
+    Array.isArray(body.paymentAccounts) && body.paymentAccounts.length > 0
+      ? body.paymentAccounts
+          .map((a) => ({
+            label: String(a?.label ?? "").trim(),
+            details: String(a?.details ?? "").trim(),
+          }))
+          .filter((a) => a.label || a.details)
+      : typeof body.paymentAccount === "string" && body.paymentAccount.trim()
+        ? [{ label: "Payment", details: body.paymentAccount.trim() }]
+        : [];
+  const legacyPaymentAccount = paymentAccounts
+    .map((a) => (a.label ? `${a.label}: ${a.details}` : a.details))
+    .filter(Boolean)
+    .join("\n");
   const isActive = Boolean(body.isActive);
 
-  if (!title || !description || !deadline || !paymentAccount) {
+  if (!title || !description || !deadline || paymentAccounts.length === 0) {
     return {
       error:
-        "Campaign title, description, deadline and payment account are required.",
+        "Campaign title, description, deadline and at least one payment account are required.",
     };
   }
 
@@ -65,7 +82,9 @@ function validateCampaignBody(body: CampaignBody) {
       deadline,
       bannerImage,
       imageEmoji: bannerImage || "🎯",
-      paymentAccount,
+      // keep legacy field populated for older schema / UI
+      paymentAccount: legacyPaymentAccount,
+      paymentAccounts,
       isActive,
     },
   };
@@ -83,6 +102,16 @@ export async function GET() {
 
     await connectDb();
     const campaigns = await DonationCampaign.find().sort({ createdAt: -1 }).lean();
+    const receivedTotals = await Donation.aggregate([
+      { $match: { status: "received" } },
+      { $group: { _id: "$campaign", total: { $sum: "$amount" } } },
+    ]);
+    const receivedMap = new Map<string, number>(
+      (receivedTotals as Array<{ _id: unknown; total?: unknown }>).map((r) => [
+        String(r._id),
+        Number(r.total ?? 0),
+      ])
+    );
 
     return NextResponse.json({
       campaigns: (campaigns as CampaignLean[]).map((campaign) => ({
@@ -90,10 +119,21 @@ export async function GET() {
         title: campaign.title,
         description: campaign.description,
         targetAmount: campaign.targetAmount ?? campaign.goalAmount ?? 0,
-        collectedAmount: campaign.collectedAmount ?? 0,
+        collectedAmount:
+          typeof campaign.title === "string" && receivedMap.has(campaign.title)
+            ? receivedMap.get(campaign.title) ?? 0
+            : campaign.collectedAmount ?? 0,
         deadline: campaign.deadline ?? "",
         bannerImage: campaign.bannerImage ?? campaign.imageEmoji ?? "",
         paymentAccount: campaign.paymentAccount ?? "",
+        paymentAccounts: Array.isArray(campaign.paymentAccounts)
+          ? campaign.paymentAccounts.map((a) => ({
+              label: String(a?.label ?? ""),
+              details: String(a?.details ?? ""),
+            }))
+          : campaign.paymentAccount
+            ? [{ label: "Payment", details: campaign.paymentAccount }]
+            : [],
         isActive: Boolean(campaign.isActive),
         createdAt: campaign.createdAt,
       })),

@@ -32,6 +32,18 @@ export async function GET(
         collegeName: user.collegeName || "",
         universityName: user.universityName || "",
         bio: user.bio || "",
+        phone: user.phone || "",
+        whatsapp: user.whatsapp || "",
+        linkedin: user.linkedin || "",
+        facebook: user.facebook || "",
+        instagram: user.instagram || "",
+        skills: user.skills || "",
+        website: user.website || "",
+        currentJobTitle: user.currentJobTitle || "",
+        company: user.company || "",
+        industry: user.industry || "",
+        workLocation: user.workLocation || "",
+        department: user.department || "",
       },
     });
   } catch {

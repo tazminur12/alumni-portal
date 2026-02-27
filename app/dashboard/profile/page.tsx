@@ -30,6 +30,17 @@ type ProfileData = {
   phone: string;
   location: string;
   bio: string;
+  whatsapp: string;
+  linkedin: string;
+  facebook: string;
+  instagram: string;
+  skills: string;
+  website: string;
+  currentJobTitle: string;
+  company: string;
+  industry: string;
+  workLocation: string;
+  department: string;
 };
 
 export default function ProfilePage() {
@@ -88,6 +99,17 @@ export default function ProfilePage() {
       profile.phone,
       profile.location,
       profile.bio,
+      profile.whatsapp,
+      profile.linkedin,
+      profile.facebook,
+      profile.instagram,
+      profile.skills,
+      profile.website,
+      profile.currentJobTitle,
+      profile.company,
+      profile.industry,
+      profile.workLocation,
+      profile.department,
     ];
     const filled = fields.filter((value) => value?.trim()).length;
     return Math.round((filled / fields.length) * 100);
@@ -304,192 +326,425 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Personal Info and Editable Form */}
+        {/* Profile details and editable form */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
           <h2 className="mb-4 text-lg font-semibold text-foreground">
-            Personal Information
+            Profile Details
           </h2>
           {isEditing && form ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <User size={12} />
-                  Full Name
-                </span>
-                <input
-                  value={form.fullName}
-                  onChange={(event) =>
-                    handleInputChange("fullName", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <Mail size={12} />
-                  Email
-                </span>
-                <input
-                  value={form.email}
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-border bg-gray-100 px-3 py-2 text-sm text-muted"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <GraduationCap size={12} />
-                  Batch
-                </span>
-                <input
-                  value={form.batch}
-                  onChange={(event) =>
-                    handleInputChange("batch", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <GraduationCap size={12} />
-                  Passing Year
-                </span>
-                <input
-                  value={form.passingYear}
-                  onChange={(event) =>
-                    handleInputChange("passingYear", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <School size={12} />
-                  College
-                </span>
-                <input
-                  value={form.collegeName}
-                  onChange={(event) =>
-                    handleInputChange("collegeName", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <Building2 size={12} />
-                  University
-                </span>
-                <input
-                  value={form.universityName}
-                  onChange={(event) =>
-                    handleInputChange("universityName", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <Briefcase size={12} />
-                  Profession
-                </span>
-                <input
-                  value={form.profession}
-                  onChange={(event) =>
-                    handleInputChange("profession", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <Phone size={12} />
-                  Phone
-                </span>
-                <input
-                  value={form.phone}
-                  onChange={(event) =>
-                    handleInputChange("phone", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4 sm:col-span-2">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  <MapPin size={12} />
-                  Location
-                </span>
-                <input
-                  value={form.location}
-                  onChange={(event) =>
-                    handleInputChange("location", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="rounded-xl bg-background p-4 sm:col-span-2">
-                <span className="mb-1 flex items-center gap-2 text-xs text-muted">
-                  Bio
-                </span>
-                <textarea
-                  value={form.bio}
-                  onChange={(event) =>
-                    handleInputChange("bio", event.target.value)
-                  }
-                  rows={4}
-                  className="w-full resize-none rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-                  placeholder="Write a short professional bio..."
-                />
-              </label>
+            <div className="grid gap-4">
+              {/* Personal Info */}
+              <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  Personal Info
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <User size={12} />
+                      Full Name
+                    </span>
+                    <input
+                      value={form.fullName}
+                      onChange={(event) =>
+                        handleInputChange("fullName", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Mail size={12} />
+                      Email
+                    </span>
+                    <input
+                      value={form.email}
+                      disabled
+                      className="w-full cursor-not-allowed rounded-lg border border-border bg-gray-100 px-3 py-2 text-sm text-muted"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <GraduationCap size={12} />
+                      Batch
+                    </span>
+                    <input
+                      value={form.batch}
+                      onChange={(event) =>
+                        handleInputChange("batch", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <GraduationCap size={12} />
+                      Passing Year
+                    </span>
+                    <input
+                      value={form.passingYear}
+                      onChange={(event) =>
+                        handleInputChange("passingYear", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <School size={12} />
+                      College
+                    </span>
+                    <input
+                      value={form.collegeName}
+                      onChange={(event) =>
+                        handleInputChange("collegeName", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Building2 size={12} />
+                      University
+                    </span>
+                    <input
+                      value={form.universityName}
+                      onChange={(event) =>
+                        handleInputChange("universityName", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4 sm:col-span-2">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <MapPin size={12} />
+                      Location
+                    </span>
+                    <input
+                      value={form.location}
+                      onChange={(event) =>
+                        handleInputChange("location", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Social / Networking */}
+              <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  Social / Networking
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Phone size={12} />
+                      Phone / WhatsApp
+                    </span>
+                    <input
+                      value={form.phone}
+                      onChange={(event) =>
+                        handleInputChange("phone", event.target.value)
+                      }
+                      placeholder="e.g. +8801XXXXXXXXX"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Phone size={12} />
+                      WhatsApp (optional)
+                    </span>
+                    <input
+                      value={form.whatsapp}
+                      onChange={(event) =>
+                        handleInputChange("whatsapp", event.target.value)
+                      }
+                      placeholder="Alternative WhatsApp number"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      LinkedIn
+                    </span>
+                    <input
+                      value={form.linkedin}
+                      onChange={(event) =>
+                        handleInputChange("linkedin", event.target.value)
+                      }
+                      placeholder="https://linkedin.com/in/username"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Facebook
+                    </span>
+                    <input
+                      value={form.facebook}
+                      onChange={(event) =>
+                        handleInputChange("facebook", event.target.value)
+                      }
+                      placeholder="https://facebook.com/username"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Instagram
+                    </span>
+                    <input
+                      value={form.instagram}
+                      onChange={(event) =>
+                        handleInputChange("instagram", event.target.value)
+                      }
+                      placeholder="https://instagram.com/username"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4 sm:col-span-2">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Skills / Expertise
+                    </span>
+                    <input
+                      value={form.skills}
+                      onChange={(event) =>
+                        handleInputChange("skills", event.target.value)
+                      }
+                      placeholder="e.g. Web Development, Data Analysis, Public Speaking"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Professional Info */}
+              <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  Professional Info
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Briefcase size={12} />
+                      Current Job / Position
+                    </span>
+                    <input
+                      value={form.currentJobTitle}
+                      onChange={(event) =>
+                        handleInputChange("currentJobTitle", event.target.value)
+                      }
+                      placeholder="e.g. Software Engineer"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Company / Organization
+                    </span>
+                    <input
+                      value={form.company}
+                      onChange={(event) =>
+                        handleInputChange("company", event.target.value)
+                      }
+                      placeholder="e.g. ABC Tech Ltd."
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Industry / Field
+                    </span>
+                    <input
+                      value={form.industry}
+                      onChange={(event) =>
+                        handleInputChange("industry", event.target.value)
+                      }
+                      placeholder="e.g. Software, Finance, Education"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Work Location
+                    </span>
+                    <input
+                      value={form.workLocation}
+                      onChange={(event) =>
+                        handleInputChange("workLocation", event.target.value)
+                      }
+                      placeholder="City, Country"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="rounded-xl bg-background p-4 sm:col-span-2">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      LinkedIn / Personal Website
+                    </span>
+                    <input
+                      value={form.website}
+                      onChange={(event) =>
+                        handleInputChange("website", event.target.value)
+                      }
+                      placeholder="https://your-portfolio.com"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Academic Info */}
+              <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  Academic Info
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="rounded-xl bg-background p-4 sm:col-span-2">
+                    <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      Department / Subject
+                    </span>
+                    <input
+                      value={form.department}
+                      onChange={(event) =>
+                        handleInputChange("department", event.target.value)
+                      }
+                      placeholder="e.g. Science, Business Studies, Humanities"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="sm:col-span-2">
+                <label className="block rounded-xl bg-background p-4">
+                  <span className="mb-1 flex items-center gap-2 text-xs text-muted">
+                    Bio
+                  </span>
+                  <textarea
+                    value={form.bio}
+                    onChange={(event) =>
+                      handleInputChange("bio", event.target.value)
+                    }
+                    rows={4}
+                    className="w-full resize-none rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    placeholder="Write a short professional bio..."
+                  />
+                </label>
+              </div>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { icon: User, label: "Full Name", value: profile?.fullName || "-" },
-                { icon: Mail, label: "Email", value: profile?.email || "-" },
-                {
-                  icon: GraduationCap,
-                  label: "Batch / Passing Year",
-                  value: `Batch ${profile?.batch || "-"} / ${profile?.passingYear || "-"}`,
-                },
-                {
-                  icon: School,
-                  label: "College",
-                  value: profile?.collegeName || "Not added",
-                },
-                {
-                  icon: Building2,
-                  label: "University",
-                  value: profile?.universityName || "Not added",
-                },
-                {
-                  icon: Briefcase,
-                  label: "Profession",
-                  value: profile?.profession || "Not added",
-                },
-                {
-                  icon: Phone,
-                  label: "Phone",
-                  value: profile?.phone || "Not added",
-                },
-                {
-                  icon: MapPin,
-                  label: "Location",
-                  value: profile?.location || "Not added",
-                },
-              ].map((field) => (
-                <div key={field.label} className="rounded-xl bg-background p-4">
-                  <div className="mb-1 flex items-center gap-2 text-xs text-muted">
-                    <field.icon size={12} />
-                    {field.label}
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { icon: User, label: "Full Name", value: profile?.fullName || "-" },
+                  { icon: Mail, label: "Email", value: profile?.email || "-" },
+                  {
+                    icon: GraduationCap,
+                    label: "Batch / Passing Year",
+                    value: `Batch ${profile?.batch || "-"} / ${profile?.passingYear || "-"}`,
+                  },
+                  {
+                    icon: School,
+                    label: "College",
+                    value: profile?.collegeName || "Not added",
+                  },
+                  {
+                    icon: Building2,
+                    label: "University",
+                    value: profile?.universityName || "Not added",
+                  },
+                  {
+                    icon: MapPin,
+                    label: "Location",
+                    value: profile?.location || "Not added",
+                  },
+                ].map((field) => (
+                  <div key={field.label} className="rounded-xl bg-background p-4">
+                    <div className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <field.icon size={12} />
+                      {field.label}
+                    </div>
+                    <p className="text-sm font-medium text-foreground">
+                      {field.value}
+                    </p>
                   </div>
-                  <p className="text-sm font-medium text-foreground">{field.value}</p>
+                ))}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-background p-4 sm:col-span-2">
+                  <div className="mb-1 text-xs text-muted">Social / Networking</div>
+                  <div className="space-y-1 text-sm text-foreground">
+                    <p>
+                      <span className="font-semibold">Phone / WhatsApp: </span>
+                      {profile?.phone || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">WhatsApp: </span>
+                      {profile?.whatsapp || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">LinkedIn: </span>
+                      {profile?.linkedin || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Facebook: </span>
+                      {profile?.facebook || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Instagram: </span>
+                      {profile?.instagram || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Skills / Expertise: </span>
+                      {profile?.skills || "Not added"}
+                    </p>
+                  </div>
                 </div>
-              ))}
-              <div className="rounded-xl bg-background p-4 sm:col-span-2">
-                <div className="mb-1 text-xs text-muted">Bio</div>
-                <p className="text-sm font-medium text-foreground">
-                  {profile?.bio || "No bio added yet."}
-                </p>
+
+                <div className="rounded-xl bg-background p-4 sm:col-span-2">
+                  <div className="mb-1 text-xs text-muted">Professional Info</div>
+                  <div className="space-y-1 text-sm text-foreground">
+                    <p>
+                      <span className="font-semibold">Current Job / Position: </span>
+                      {profile?.currentJobTitle || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Company / Organization: </span>
+                      {profile?.company || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Industry / Field: </span>
+                      {profile?.industry || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Work Location: </span>
+                      {profile?.workLocation || "Not added"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Website / Portfolio: </span>
+                      {profile?.website || "Not added"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-background p-4 sm:col-span-2">
+                  <div className="mb-1 text-xs text-muted">Academic Info</div>
+                  <p className="text-sm font-medium text-foreground">
+                    <span className="font-semibold">Department / Subject: </span>
+                    {profile?.department || "Not added"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-background p-4 sm:col-span-2">
+                  <div className="mb-1 text-xs text-muted">Bio</div>
+                  <p className="text-sm font-medium text-foreground">
+                    {profile?.bio || "No bio added yet."}
+                  </p>
+                </div>
               </div>
             </div>
           )}

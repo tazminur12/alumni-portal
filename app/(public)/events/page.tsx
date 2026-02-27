@@ -21,6 +21,7 @@ export default async function EventsPage() {
     status: event.status,
     isRegistrationOpen: event.isRegistrationOpen || false,
     registrationDeadline: event.registrationDeadline || "",
+    bannerImage: event.bannerImage || "",
   }));
 
   return (

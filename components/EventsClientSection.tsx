@@ -15,6 +15,7 @@ type EventData = {
   status: string;
   isRegistrationOpen: boolean;
   registrationDeadline?: string;
+  bannerImage?: string;
 };
 
 type UserData = {

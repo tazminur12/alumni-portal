@@ -6,6 +6,7 @@ export interface IPost {
   author: string; // Storing author name or ID
   category: "Announcement" | "Career" | "News" | "Events" | "Story";
   status: "Published" | "Draft" | "Review";
+  bannerImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +37,11 @@ const postSchema = new Schema<IPost>(
       type: String,
       enum: ["Published", "Draft", "Review"],
       default: "Draft",
+    },
+    bannerImage: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   {

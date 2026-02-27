@@ -76,13 +76,14 @@ export default function AdminClientLayout({
 
               {profileOpen && (
                 <div className="absolute right-0 mt-1 w-48 rounded-xl border border-border bg-white py-1 shadow-lg">
-                  <button
-                    type="button"
+                  <Link
+                    href="/admin/profile"
+                    onClick={() => setProfileOpen(false)}
                     className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-foreground hover:bg-gray-50"
                   >
                     <User size={16} />
                     Profile
-                  </button>
+                  </Link>
                   <div className="my-1 border-t border-border" />
                   <button
                     type="button"

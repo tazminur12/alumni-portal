@@ -18,6 +18,8 @@ const navLinks = [
   { href: "/events", label: "Events" },
   { href: "/donations", label: "Donations" },
   { href: "/memories", label: "Memories" },
+  { href: "/announcements", label: "Announcements" },
+  { href: "/gallery", label: "Our Gallery" },
 ];
 
 export default function Navbar() {
@@ -81,12 +83,13 @@ export default function Navbar() {
     }
   };
 
-  const dashboardHref =
+  const isAdminRole =
     alumniUser?.role === "super_admin" ||
     alumniUser?.role === "admin" ||
-    alumniUser?.role === "moderator"
-      ? "/admin"
-      : "/dashboard";
+    alumniUser?.role === "moderator";
+
+  const dashboardHref = isAdminRole ? "/admin" : "/dashboard";
+  const profileHref = isAdminRole ? "/admin/profile" : "/dashboard/profile";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md">
@@ -145,7 +148,7 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                   <Link
-                    href="/dashboard/profile"
+                    href={profileHref}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50"
                     onClick={() => setProfileOpen(false)}
                   >
@@ -217,7 +220,7 @@ export default function Navbar() {
                 </li>
                 <li>
                   <Link
-                    href="/dashboard/profile"
+                    href={profileHref}
                     onClick={() => setMobileOpen(false)}
                     className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground"
                   >
