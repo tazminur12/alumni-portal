@@ -13,21 +13,25 @@ A modern, responsive alumni web application for **Amtoli Model High School, Shib
 ## ✨ Features
 
 ### 🌐 Public Pages
-- **Home** — Hero banner, alumni highlights, upcoming events, call-to-action
+- **Home** — Hero with slideshow or fallback image, Featured Alumni, stats, upcoming events, CTA
 - **About** — School history, mission/vision/values, milestones timeline
 - **Alumni Directory** — Searchable alumni listing with batch & profession filters
 - **Events** — Upcoming events with registration, type badges, and details
 - **Donations** — Active fundraising campaigns with progress tracking
+- **Announcements** — Published posts as news and updates with detail view
+- **Our Gallery** — Public gallery with grid view and lightbox for full-size images
 - **Jobs & Career** — Job opportunities shared by alumni with apply actions
 - **Memories** — Shared school memories with likes, comments, and batch tags
 
 ### 🔐 Authentication
 - **Login** — Clean centered card with email/password fields
 - **Register** — Full registration with Name, Batch, Passing Year, Email, Password
+- **Forgot Password** — Request password reset link via email
+- **Reset Password** — Set new password using token from email link
 
 ### 📊 User Dashboard
 - **Dashboard** — Stats overview, recent activity feed, upcoming events
-- **My Profile** — Profile header with banner, personal info grid, completion tracker
+- **My Profile** — Editable profile with Cloudinary photo upload, completion tracker
 - **Alumni Directory** — Connect with alumni from within the dashboard
 - **Messages** — Split-panel real-time chat interface
 - **Events** — Browse & register for alumni events
@@ -37,11 +41,43 @@ A modern, responsive alumni web application for **Amtoli Model High School, Shib
 
 ### 🛡️ Admin Panel
 - **Dashboard** — Overview stats with trends, recent registrations, quick actions
-- **User Management** — Full CRUD table with search, filter, status badges
+- **User Management** — Full CRUD with role assignment (super_admin, admin, moderator, alumni)
 - **Event Management** — Create and manage events with status tracking
-- **Post Management** — Manage alumni posts with category & review workflow
-- **Donation Management** — Track donations with summary analytics
+- **Post Management** — Manage announcements/posts with category & review workflow
+- **Featured Alumni** — Mark alumni as featured for homepage display
+- **Slideshow** — Manage hero images on homepage (upload, reorder, delete)
+- **Our Gallery** — Upload images for public gallery; manage and delete
+- **Donation Management** — Campaigns, donor list, history, fund usage
+- **Admin Profile** — Profile page for super_admin, admin, moderator with role badges
 - **Analytics** — Batch distribution charts, monthly activity, top donors
+
+---
+
+## 🔄 কিভাবে কাজ করে (How It Works)
+
+### Role-based Access
+- **super_admin / admin / moderator** → `/admin` dashboard, `/admin/profile`, limited sidebar for moderator
+- **alumni** → `/dashboard`, `/dashboard/profile`
+- Navbar "Profile" & "Dashboard" links route based on logged-in user role
+
+### Hero & Slideshow
+- Admin uploads images at `/admin/slideshow` (Cloudinary)
+- Home shows slideshow if images exist; otherwise fallback `Hero.jpg` or env image
+- Full image visible (`object-contain`), responsive height and spacing
+
+### Gallery System
+- Admin uploads at `/admin/gallery` → saved to MongoDB (Cloudinary URLs)
+- Public views at `/gallery` in grid; click opens lightbox for full-size
+
+### Forgot / Reset Password
+1. User enters email at `/forgot-password`
+2. Server sends reset link with token + email to user inbox
+3. User clicks link → `/reset-password?token=...&email=...`
+4. User sets new password; token validated via API
+
+### Featured Alumni
+- Admin marks users as featured at `/admin/Featured-Alumni`
+- Homepage displays featured alumni cards with profile links
 
 ---
 
@@ -68,22 +104,26 @@ alumni-portal/
 │   │
 │   ├── (public)/                   # Public pages (Navbar + Footer)
 │   │   ├── layout.tsx
-│   │   ├── page.tsx                # Home
+│   │   ├── page.tsx                # Home (hero, slideshow, featured alumni)
 │   │   ├── about/page.tsx
-│   │   ├── alumni/page.tsx
+│   │   ├── alumni/page.tsx, alumni/[id]/page.tsx
 │   │   ├── events/page.tsx
 │   │   ├── donations/page.tsx
+│   │   ├── announcements/page.tsx, announcements/[id]/page.tsx
+│   │   ├── gallery/page.tsx        # Public gallery (grid + lightbox)
 │   │   ├── jobs/page.tsx
-│   │   └── memories/page.tsx
+│   │   └── memories/page.tsx, memories/[id]/page.tsx
 │   │
 │   ├── (auth)/                     # Authentication (centered card layout)
 │   │   ├── layout.tsx
 │   │   ├── login/page.tsx
-│   │   └── register/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── forgot-password/page.tsx
+│   │   └── reset-password/page.tsx
 │   │
 │   ├── dashboard/                  # User dashboard (sidebar + top nav)
 │   │   ├── layout.tsx
-│   │   ├── page.tsx                # Dashboard home
+│   │   ├── page.tsx
 │   │   ├── profile/page.tsx
 │   │   ├── directory/page.tsx
 │   │   ├── messages/page.tsx
@@ -92,25 +132,39 @@ alumni-portal/
 │   │   ├── memories/page.tsx
 │   │   └── donations/page.tsx
 │   │
-│   └── admin/                      # Admin panel (dark sidebar + table views)
+│   └── admin/                      # Admin panel (dark sidebar)
 │       ├── layout.tsx
-│       ├── page.tsx                # Admin dashboard
+│       ├── page.tsx
 │       ├── users/page.tsx
 │       ├── events/page.tsx
+│       ├── event-registrations/page.tsx
 │       ├── posts/page.tsx
-│       ├── donations/page.tsx
+│       ├── Featured-Alumni/page.tsx
+│       ├── slideshow/page.tsx      # Hero slideshow management
+│       ├── gallery/page.tsx        # Gallery upload & management
+│       ├── profile/page.tsx        # Admin profile (role badges)
+│       ├── donations/page.tsx, donor-list/, history/, fund-usage/
 │       └── analytics/page.tsx
 │
-├── components/                     # Reusable layout components
-│   ├── Navbar.tsx                  # Public navigation bar
-│   ├── Footer.tsx                  # Public footer
-│   ├── DashboardSidebar.tsx        # User dashboard sidebar
-│   ├── DashboardNavbar.tsx         # User dashboard top navbar
-│   └── AdminSidebar.tsx            # Admin panel sidebar
+├── components/
+│   ├── Navbar.tsx                  # Role-based Profile/Dashboard links
+│   ├── Footer.tsx
+│   ├── DashboardSidebar.tsx
+│   ├── DashboardNavbar.tsx
+│   ├── AdminSidebar.tsx
+│   ├── AdminClientLayout.tsx
+│   ├── HeroSlideshow.tsx           # Home hero slideshow
+│   └── FeaturedAlumni.tsx
 │
+├── models/
+│   ├── User.ts, Post.ts, Event.ts
+│   ├── Donation.ts, DonationCampaign.ts
+│   ├── Slideshow.ts
+│   └── Gallery.ts
+│
+├── app/api/                        # REST APIs (auth, admin, public)
 ├── package.json
 ├── tsconfig.json
-├── tailwind v4 (via postcss)
 └── next.config.ts
 ```
 
@@ -133,6 +187,23 @@ alumni-portal/
 
 ---
 
+## ⚙️ Environment Variables
+
+Create a `.env` file in the project root:
+
+| Variable                        | Required | Description                          |
+|:--------------------------------|:--------|:------------------------------------|
+| `MONGO_URI`                     | Yes     | MongoDB connection string           |
+| `NEXTAUTH_SECRET`               | Yes     | Secret for JWT/auth tokens          |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name           |
+| `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Yes | Cloudinary upload preset     |
+| `APP_EMAIL`                     | Forgot pwd | Email for sending reset links   |
+| `APP_PASSWORD`                  | Forgot pwd | App password (e.g. Gmail)      |
+| `NEXT_PUBLIC_APP_URL`           | Optional | App URL (e.g. https://yoursite.com) |
+| `NEXT_PUBLIC_HERO_IMAGE`        | Optional | Fallback hero image URL if no slideshow |
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -149,6 +220,8 @@ cd alumni-portal
 
 # Install dependencies
 npm install
+
+# Create .env with the variables listed in Environment Variables
 
 # Start development server
 npm run dev
@@ -179,16 +252,22 @@ npm start
 ## 🗺️ Route Map
 
 | Route               | Layout    | Description                |
-|:---------------------|:----------|:---------------------------|
-| `/`                  | Public    | Home page                  |
-| `/about`             | Public    | About the school           |
+|:--------------------|:----------|:---------------------------|
+| `/`                 | Public    | Home (hero, slideshow, featured alumni) |
+| `/about`            | Public    | About the school           |
 | `/alumni`            | Public    | Alumni directory           |
+| `/alumni/[id]`       | Public    | Alumni profile             |
 | `/events`            | Public    | Events listing             |
 | `/donations`         | Public    | Donation campaigns         |
+| `/announcements`     | Public    | Announcements / news       |
+| `/announcements/[id]`| Public    | Announcement detail        |
+| `/gallery`           | Public    | Our Gallery (grid + lightbox) |
 | `/jobs`              | Public    | Jobs & career board        |
 | `/memories`          | Public    | Shared memories            |
 | `/login`             | Auth      | User login                 |
 | `/register`          | Auth      | User registration          |
+| `/forgot-password`   | Auth      | Request password reset     |
+| `/reset-password`    | Auth      | Set new password (token)    |
 | `/dashboard`         | Dashboard | User dashboard home        |
 | `/dashboard/profile` | Dashboard | My profile                 |
 | `/dashboard/directory` | Dashboard | Alumni directory (auth)  |
@@ -196,12 +275,20 @@ npm start
 | `/dashboard/events`  | Dashboard | Events (auth)              |
 | `/dashboard/jobs`    | Dashboard | Jobs & career (auth)       |
 | `/dashboard/memories`| Dashboard | Memories (auth)            |
-| `/dashboard/donations`| Dashboard| Donations (auth)           |
+| `/dashboard/donations`| Dashboard | Donations (auth)          |
 | `/admin`             | Admin     | Admin dashboard            |
 | `/admin/users`       | Admin     | User management            |
 | `/admin/events`      | Admin     | Event management           |
-| `/admin/posts`       | Admin     | Post management            |
-| `/admin/donations`   | Admin     | Donation management        |
+| `/admin/event-registrations` | Admin | Event registrations  |
+| `/admin/posts`       | Admin     | Post / announcements       |
+| `/admin/Featured-Alumni` | Admin | Featured alumni on home |
+| `/admin/slideshow`   | Admin     | Hero slideshow images      |
+| `/admin/gallery`     | Admin     | Gallery upload & management |
+| `/admin/profile`     | Admin     | Admin profile (role badges) |
+| `/admin/donations`   | Admin     | Donation campaigns         |
+| `/admin/donations/donor-list` | Admin | Donor list           |
+| `/admin/donations/history`    | Admin | Donation history     |
+| `/admin/donations/fund-usage` | Admin | Fund usage updates  |
 | `/admin/analytics`   | Admin     | Analytics & insights       |
 
 ---
