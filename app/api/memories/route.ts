@@ -38,6 +38,7 @@ export async function GET() {
       author: m.author,
       authorId: m.authorId ? String(m.authorId) : "",
       imageUrl: m.imageUrl || "",
+      images: m.images || (m.imageUrl ? [m.imageUrl] : []),
       likes: m.likes ?? 0,
       comments: m.comments ?? 0,
       color: m.color || "from-primary/5 to-primary/10",
@@ -68,6 +69,17 @@ export async function POST(request: Request) {
     const batch = typeof body.batch === "string" ? body.batch.trim() : "";
     const imageUrl =
       typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+    let images = Array.isArray(body.images) ? body.images.filter((img: unknown) => typeof img === "string" && img.trim() !== "") : [];
+    
+    // Limit to 10 images
+    if (images.length > 10) {
+      images = images.slice(0, 10);
+    }
+    
+    // Fallback logic to merge imageUrl and images
+    if (!images.length && imageUrl) {
+      images = [imageUrl];
+    }
 
     if (!title || !description || !date || !batch) {
       return NextResponse.json(
@@ -86,7 +98,8 @@ export async function POST(request: Request) {
       author: currentUser.fullName,
       authorId: currentUser._id,
       color: randomColor(),
-      imageUrl: imageUrl || undefined,
+      imageUrl: images.length > 0 ? images[0] : "",
+      images,
     });
 
     return NextResponse.json(

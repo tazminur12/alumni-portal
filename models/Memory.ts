@@ -8,6 +8,7 @@ export interface IMemory {
   author: string;
   authorId?: Types.ObjectId;
   imageUrl?: string;
+  images?: string[];
   likes: number;
   comments: number;
   color?: string;
@@ -52,6 +53,16 @@ const memorySchema = new Schema<IMemory>(
     imageUrl: {
       type: String,
       default: "",
+    },
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(val: string[]) {
+          return val.length <= 10;
+        },
+        message: 'A memory can have at most 10 images.'
+      }
     },
     likes: {
       type: Number,

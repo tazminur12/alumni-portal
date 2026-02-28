@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   Image as ImageIcon,
   Plus,
@@ -21,6 +22,7 @@ type MemoryData = {
   author: string;
   authorId?: string;
   imageUrl?: string;
+  images?: string[];
   likes: number;
   comments: number;
   color: string;
@@ -198,13 +200,28 @@ export default function DashboardMemoriesPage() {
               className="group rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
             >
               <div
-                className={`flex h-40 items-center justify-center rounded-t-2xl bg-gradient-to-br ${memory.color}`}
+                className={`flex h-40 items-center justify-center rounded-t-2xl bg-linear-to-br ${memory.color}`}
               >
-                {memory.imageUrl ? (
-                  <img
+                {memory.images && memory.images.length > 0 ? (
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={memory.images[0]}
+                      alt={memory.title}
+                      fill
+                      className="rounded-t-2xl object-cover"
+                    />
+                    {memory.images.length > 1 && (
+                      <div className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white">
+                        +{memory.images.length - 1} photos
+                      </div>
+                    )}
+                  </div>
+                ) : memory.imageUrl ? (
+                  <Image
                     src={memory.imageUrl}
                     alt={memory.title}
-                    className="h-full w-full rounded-t-2xl object-cover"
+                    fill
+                    className="rounded-t-2xl object-cover"
                   />
                 ) : (
                   <ImageIcon

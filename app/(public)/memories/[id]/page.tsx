@@ -3,13 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
-  Image as ImageIcon,
+  ImageIcon,
   Heart,
   MessageCircle,
   ArrowLeft,
   Camera,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const GUEST_ID_KEY = "alumni_guest_id";
 
@@ -31,6 +32,7 @@ type Memory = {
   batch: string;
   author: string;
   imageUrl?: string;
+  images?: string[];
   color: string;
 };
 
@@ -190,20 +192,53 @@ export default function MemoryDetailsPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <div
-              className={`flex min-h-[200px] items-center justify-center bg-gradient-to-br ${
+              className={`flex w-full items-center justify-center bg-linear-to-br min-h-50 ${
                 memory.color || "from-primary/5 to-primary/10"
               }`}
             >
-              {memory.imageUrl ? (
-                <img
-                  src={memory.imageUrl}
-                  alt={memory.title}
-                  className="h-full w-full object-cover"
-                />
+              {memory.images && memory.images.length > 0 ? (
+                <div
+                  className={`grid w-full gap-1 p-1 sm:gap-2 sm:p-2 ${
+                    memory.images.length === 1
+                      ? "grid-cols-1"
+                      : memory.images.length === 2
+                      ? "grid-cols-2"
+                      : memory.images.length === 3 || memory.images.length === 4
+                      ? "grid-cols-2 lg:grid-cols-3"
+                      : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+                  }`}
+                >
+                  {memory.images.map((img, i) => (
+                    <div
+                      key={i}
+                      className={`relative w-full overflow-hidden rounded-lg ${
+                        memory.images!.length === 1 ? "aspect-video" : "min-h-50"
+                      }`}
+                    >
+                      <Image
+                        src={img}
+                        alt={`${memory.title} - ${i + 1}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : memory.imageUrl ? (
+                <div className="relative aspect-video w-full">
+                  <Image
+                    src={memory.imageUrl}
+                    alt={memory.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <ImageIcon
                   size={64}
-                  className="text-foreground/15"
+                  className="text-foreground/15 min-h-50"
                 />
               )}
             </div>

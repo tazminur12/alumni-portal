@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useEffect, useRef } from "react";
 import { Upload, X } from "lucide-react";
+import Image from "next/image";
 
 type MemoryData = {
   id?: string;
@@ -9,7 +10,7 @@ type MemoryData = {
   description: string;
   date: string;
   batch: string;
-  imageUrl?: string;
+  images?: string[];
 };
 
 interface ShareMemoryModalProps {
@@ -33,7 +34,7 @@ export default function ShareMemoryModal({
     description: "",
     date: "",
     batch: "",
-    imageUrl: "",
+    images: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +57,7 @@ export default function ShareMemoryModal({
           description: editingMemory.description,
           date: parseDateForInput(editingMemory.date),
           batch: editingMemory.batch,
-          imageUrl: editingMemory.imageUrl || "",
+          images: editingMemory.images || [],
         });
       } else {
         setForm({
@@ -64,32 +65,49 @@ export default function ShareMemoryModal({
           description: "",
           date: new Date().toISOString().slice(0, 10),
           batch: "",
-          imageUrl: "",
+          images: [],
         });
       }
     }
   }, [isOpen, editingMemory, userFullName]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file (jpg, png, gif, webp)");
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: string[] = [];
+    const filesArray = Array.from(files);
+
+    if (form.images && form.images.length + filesArray.length > 10) {
+      alert("You can upload a maximum of 10 images.");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be smaller than 2MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, imageUrl: String(reader.result) }));
-    };
-    reader.readAsDataURL(file);
+
+    filesArray.forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file (jpg, png, gif, webp)");
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Each image must be smaller than 2MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        newImages.push(String(reader.result));
+        if (newImages.length === filesArray.length) {
+          setForm((prev) => ({ ...prev, images: [...(prev.images || []), ...newImages] }));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const removeImage = () => {
-    setForm((prev) => ({ ...prev, imageUrl: "" }));
+  const removeImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images?.filter((_, i) => i !== index),
+    }));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -102,7 +120,7 @@ export default function ShareMemoryModal({
         description: form.description.trim(),
         date: form.date.trim(),
         batch: form.batch.trim(),
-        imageUrl: form.imageUrl?.trim() || "",
+        images: form.images || [],
       };
 
       if (isEdit && editingMemory?.id) {
@@ -153,38 +171,45 @@ export default function ShareMemoryModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-foreground">
-              Image (optional)
+              Images (optional, max 10)
             </label>
-            {form.imageUrl ? (
-              <div className="relative inline-block">
-                <img
-                  src={form.imageUrl}
-                  alt="Preview"
-                  className="h-32 w-auto max-w-full rounded-xl border border-border object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  aria-label="Remove image"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
+            <div className="flex flex-wrap gap-4 mb-4">
+              {form.images?.map((img, index) => (
+                <div key={index} className="relative inline-block">
+                  <Image
+                    src={img}
+                    alt={`Preview ${index + 1}`}
+                    width={128}
+                    height={128}
+                    className="h-32 w-32 rounded-xl border border-border object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    aria-label="Remove image"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {(!form.images || form.images.length < 10) && (
               <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-gray-50 py-8 transition-colors hover:border-primary hover:bg-primary/5">
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={handleImageSelect}
                   className="hidden"
                 />
                 <Upload size={24} className="text-muted" />
                 <span className="text-sm text-muted">
-                  Click to upload image (max 2MB)
+                  Click to upload images (max 2MB each)
                 </span>
-                <span className="text-xs text-muted">JPG, PNG, GIF, WebP</span>
+                <span className="text-xs text-muted">JPG, PNG, GIF, WebP ({10 - (form.images?.length || 0)} remaining)</span>
               </label>
             )}
           </div>

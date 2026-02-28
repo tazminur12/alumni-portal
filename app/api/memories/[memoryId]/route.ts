@@ -65,6 +65,7 @@ export async function GET(
         batch: memory.batch,
         author: memory.author,
         imageUrl: memory.imageUrl || "",
+        images: memory.images || (memory.imageUrl ? [memory.imageUrl] : []),
         color: memory.color || "from-primary/5 to-primary/10",
         createdAt: memory.createdAt,
       },
@@ -99,6 +100,17 @@ export async function PATCH(
     const batch = typeof body.batch === "string" ? body.batch.trim() : "";
     const imageUrl =
       typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+    let images = Array.isArray(body.images) ? body.images.filter((img: unknown) => typeof img === "string" && img.trim() !== "") : [];
+    
+    // Limit to 10 images
+    if (images.length > 10) {
+      images = images.slice(0, 10);
+    }
+    
+    // Fallback logic to merge imageUrl and images
+    if (!images.length && imageUrl) {
+      images = [imageUrl];
+    }
 
     if (!title || !description || !date || !batch) {
       return NextResponse.json(
@@ -124,7 +136,8 @@ export async function PATCH(
     memory.description = description;
     memory.date = date;
     memory.batch = batch;
-    if (imageUrl !== undefined) memory.imageUrl = imageUrl;
+    memory.images = images;
+    memory.imageUrl = images.length > 0 ? images[0] : "";
     await memory.save();
 
     return NextResponse.json({
