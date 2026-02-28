@@ -16,9 +16,11 @@ import {
   Save,
   X,
   UploadCloud,
+  Check,
 } from "lucide-react";
 
 type ProfileData = {
+  id?: string;
   fullName: string;
   email: string;
   batch: string;
@@ -41,6 +43,7 @@ type ProfileData = {
   industry: string;
   workLocation: string;
   department: string;
+  status?: "active" | "pending" | "suspended";
 };
 
 export default function ProfilePage() {
@@ -257,9 +260,8 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Profile Header */}
       <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="h-32 rounded-t-2xl bg-linear-to-r from-primary-dark to-primary" />
-        <div className="relative px-6 pb-6">
-          <div className="-mt-12 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative px-6 py-6">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">
               {form?.profilePicture ? (
                 <Image
@@ -267,22 +269,34 @@ export default function ProfilePage() {
                   alt={form.fullName}
                   width={96}
                   height={96}
-                  className="h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-lg"
+                  className="h-24 w-24 rounded-2xl border-2 border-border object-cover shadow-lg"
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-primary text-3xl font-bold text-white shadow-lg">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-border bg-primary/10 text-3xl font-bold text-primary shadow-sm">
                   {initials}
                 </div>
               )}
               <div className="pb-1">
-                <h1 className="text-xl font-bold text-foreground">
-                  {form?.fullName ?? "Alumni User"}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-bold text-foreground">
+                    {form?.fullName ?? "Alumni User"}
+                  </h1>
+                  {profile?.status === "active" && (
+                    <span
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white"
+                      title="Verified Active Alumni"
+                      aria-label="Verified"
+                    >
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted">
                   Batch {form?.batch ?? "-"} &middot; SSC {form?.passingYear ?? "-"}
                 </p>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -321,6 +335,7 @@ export default function ProfilePage() {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
